@@ -1,0 +1,1639 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b1020">
+<title>Moon City</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#05070f;color:#dbe6f5;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
+#app{position:fixed;inset:0}
+canvas#c{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+#top{position:absolute;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top) + 4px) 6px 4px;background:linear-gradient(#0b1020ee,#0b1020cc);border-bottom:1px solid #223;z-index:5}
+.row{display:flex;gap:6px;align-items:center}
+.chip{flex:1;min-height:36px;background:#141c33;border:1px solid #28345a;border-radius:8px;padding:2px 6px;font-size:12px;line-height:1.15;display:flex;flex-direction:column;justify-content:center;cursor:pointer}
+.chip b{white-space:nowrap;font-size:15px;color:#fff;font-weight:700}
+.chip small{color:#8fa3c8;font-size:10px;text-transform:uppercase;letter-spacing:.04em}
+.chip.bad b{color:#ff6b6b}
+.chip.good b{color:#7dffb0}
+#row2{margin-top:4px}
+#clock{flex:1.6;position:relative;height:36px;border-radius:8px;border:1px solid #28345a;overflow:hidden;background:linear-gradient(90deg,#f2d27a 0%,#c4b27a 25%,#3a4570 50%,#10163a 75%,#0a0e24 100%);background:linear-gradient(90deg,#d9c37a 0%,#d9c37a 50%,#0c1230 50%,#0c1230 100%)}
+#clock .mk{position:absolute;top:0;bottom:0;width:4px;background:#fff;box-shadow:0 0 8px #fff;border-radius:2px}
+#clock .lbl{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;text-shadow:0 0 4px #000,0 0 3px #000;color:#fff;pointer-events:none}
+.btn{min-width:44px;min-height:44px;background:#1a2547;border:1px solid #34467d;color:#dbe6f5;border-radius:10px;font-size:13px;font-weight:700;padding:0 8px;cursor:pointer;font-family:inherit}
+.btn.sm{min-height:36px;min-width:40px;padding:0 6px}
+.btn.on{background:#2f6bff;border-color:#7aa2ff;color:#fff}
+.btn:active{filter:brightness(1.3)}
+#rci{position:absolute;left:6px;top:calc(env(safe-area-inset-top) + 100px);z-index:4;display:flex;gap:4px;background:#0b1020aa;padding:4px;border-radius:8px;border:1px solid #223}
+#rci div{width:20px;text-align:center;font-size:10px;font-weight:700}
+#rci .bar{height:46px;background:#0006;border-radius:3px;position:relative;margin-bottom:2px}
+#rci .fill{position:absolute;left:0;right:0;border-radius:3px}
+#rci .mid{position:absolute;left:0;right:0;top:50%;height:1px;background:#fff7}
+#bWarn{position:absolute;right:6px;top:calc(env(safe-area-inset-top) + 100px);z-index:7;display:none;background:#7a1f1f;border-color:#ff8a8a;color:#fff;animation:wp 1.6s infinite}
+@keyframes wp{50%{box-shadow:0 0 12px #ff6b6b}}
+#probs{position:absolute;inset:0;z-index:41;background:#000a;display:none;align-items:center;justify-content:center;padding:18px}
+#probs>div{background:#0e1630;border:1px solid #ff8a8a;border-radius:14px;padding:14px;max-width:380px;width:100%;max-height:78%;overflow:auto}
+#probs h3{margin:0 0 8px;font-size:16px}#probs .pr{border-top:1px solid #2a3560;padding:8px 0;font-size:13px;line-height:1.35}#probs .pr b{display:block;font-size:14px;color:#ffb0b0}#probs .pr i{color:#9fe3b4;font-style:normal}
+#banner{position:absolute;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top) + 100px);max-width:80%;z-index:6;padding:8px 14px;border-radius:10px;font-size:13px;font-weight:700;text-align:center;background:#7a1f1fdd;border:1px solid #ff8a8a;display:none;pointer-events:none}
+#banner.info{background:#143a6add;border-color:#7aa2ff}
+#toast{position:absolute;left:50%;transform:translateX(-50%);bottom:190px;z-index:8;background:#000d;border:1px solid #567;padding:8px 12px;border-radius:10px;font-size:13px;display:none;max-width:88%;text-align:center;pointer-events:none}
+#hint{position:absolute;left:6px;right:6px;bottom:128px;z-index:4;font-size:11px;color:#a9bbdd;text-align:center;pointer-events:none;text-shadow:0 0 3px #000,0 0 3px #000}
+#bottom{position:absolute;left:0;right:0;bottom:0;z-index:5;background:#0b1020ee;border-top:1px solid #223;padding:4px 4px calc(env(safe-area-inset-bottom) + 4px)}
+#tabs{display:flex;gap:4px}
+#tabs .btn{flex:1;min-width:0;padding:0 2px;font-size:12px}
+#items{display:flex;gap:6px;overflow-x:auto;padding:6px 2px 2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+#items::-webkit-scrollbar{display:none}
+.item{flex:0 0 auto;min-width:72px;min-height:56px;background:#141c33;border:1px solid #2c3a66;border-radius:10px;padding:4px 6px;font-size:11px;color:#dbe6f5;text-align:center;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.item i{display:block;width:22px;height:10px;border-radius:3px}
+.item b{font-size:12px}
+.item small{color:#9fb2d8}
+.item.sel{background:#2253d8;border-color:#8fb0ff}
+.item.dis{opacity:.45}
+#card{position:absolute;left:6px;right:6px;bottom:calc(env(safe-area-inset-bottom) + 126px);z-index:7;background:#0e1630f2;border:1px solid #4a63a8;border-radius:12px;padding:10px 12px;display:none;font-size:13px;max-height:45vh;overflow:auto}
+#card h3{margin:0 0 4px;font-size:15px}
+#card .ln{display:flex;justify-content:space-between;gap:10px;padding:1px 0;color:#c8d6f0}
+#card .ln span:last-child{color:#fff;text-align:right}
+#card .acts{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+#card .x{position:absolute;right:6px;top:4px;min-width:44px;min-height:36px;background:none;border:0;color:#9fb2d8;font-size:20px}
+.st-ok{color:#7dffb0!important}.st-bad{color:#ff7b7b!important}
+#sheet{position:absolute;inset:0;z-index:20;background:#05070fe8;display:none;flex-direction:column;padding:calc(env(safe-area-inset-top) + 8px) 10px 10px}
+#sheet .hd{display:flex;gap:6px;align-items:center;margin-bottom:8px}
+#sheet .hd .btn{flex:1}
+#sheetbody{flex:1;overflow:auto;font-size:14px;padding-bottom:20px}
+.sec{background:#111a33;border:1px solid #28345a;border-radius:10px;padding:10px;margin-bottom:8px}
+.sec h4{margin:0 0 6px;font-size:13px;color:#8fb0ff;text-transform:uppercase;letter-spacing:.05em}
+.kv{display:flex;justify-content:space-between;padding:2px 0}
+.kv span:first-child{color:#a9bbdd}
+.meter{height:14px;background:#0008;border-radius:7px;overflow:hidden;margin:4px 0;border:1px solid #28345a}
+.meter>div{height:100%;background:linear-gradient(90deg,#2f6bff,#7dffb0)}
+input[type=range]{width:100%;height:36px}
+.slrow{margin:8px 0}
+.slrow .kv{font-weight:700}
+#start,#over{position:absolute;inset:0;z-index:30;background:radial-gradient(circle at 50% 30%,#17224a,#05070f 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center}
+#over{display:none;z-index:31;background:#05070fee}
+#start h1{margin:0;font-size:34px;letter-spacing:.04em}
+#start p,#over p{max-width:420px;color:#a9bbdd;font-size:14px;line-height:1.45;margin:0}
+#start .btn,#over .btn{min-width:220px;min-height:52px;font-size:16px}
+#confirm{position:absolute;left:6px;right:6px;bottom:calc(env(safe-area-inset-bottom) + 126px);z-index:9;background:#0e1630f5;border:1px solid #6a8bff;border-radius:12px;padding:8px 10px;display:none;gap:8px;align-items:center;font-size:13px}
+#confirm #cfTxt{flex:1;line-height:1.3}
+#confirm .btn{min-width:64px}
+#dlg{position:absolute;inset:0;z-index:40;background:#000a;display:none;align-items:center;justify-content:center;padding:24px}
+#dlg>div{background:#0e1630;border:1px solid #6a8bff;border-radius:14px;padding:18px;max-width:340px;text-align:center}
+#dlg p{margin:0 0 14px;font-size:15px}
+#dlg .row{justify-content:center}
+#slots{width:100%;max-width:380px;display:flex;flex-direction:column;gap:8px}
+.slot{display:flex;gap:6px;align-items:center;background:#111a33;border:1px solid #28345a;border-radius:10px;padding:6px 8px;text-align:left}
+.slot .inf{flex:1;font-size:13px;line-height:1.25}.slot .inf small{color:#8fa3c8;display:block}
+#start .slot .btn{min-width:0;min-height:44px;font-size:14px;padding:0 12px}
+#card .help{font-size:11.5px;color:#a9bbdd;line-height:1.35;margin-top:4px}
+#bStop{position:absolute;right:6px;bottom:calc(env(safe-area-inset-bottom) + 126px);z-index:6;display:none;min-height:40px;background:#3a1a1a;border-color:#a55}
+</style>
+</head>
+<body>
+<div id="app">
+<canvas id="c"></canvas>
+<div id="top">
+  <div class="row">
+    <div class="chip" id="chMoney"><small data-i="Credits">Credits</small><b id="vMoney">0</b></div>
+    <div class="chip" id="chPop"><small data-i="Population">Population</small><b id="vPop">0</b></div>
+    <div class="chip" id="chHap"><small data-i="Happiness">Happiness</small><b id="vHap">0</b></div>
+    <div class="chip" id="chPow"><small data-i="Power">Power</small><b id="vPow">0</b></div>
+  </div>
+  <div class="row" id="row2">
+    <div id="clock"><div class="mk" id="clockMk"></div><div class="lbl" id="clockLbl"></div></div>
+    <button class="btn sm" id="sp0" aria-label="Pause">||</button>
+    <button class="btn sm on" id="sp1">1x</button>
+    <button class="btn sm" id="sp2">2x</button>
+    <button class="btn sm" id="sp4">4x</button>
+    <button class="btn sm" id="bMenu" data-i="Menu">Menu</button>
+  </div>
+</div>
+<div id="rci"></div>
+<div id="banner"></div>
+<button class="btn" id="bWarn">! 0</button>
+<div id="probs"><div><h3 id="prTitle"></h3><div id="prList"></div><button class="btn" id="prClose" style="margin-top:10px;width:100%">Close</button></div></div>
+<div id="toast"></div>
+<div id="hint"></div>
+<div id="card"></div>
+<button class="btn" id="bStop">x Stop tool</button>
+<div id="confirm"><div id="cfTxt"></div><button class="btn" id="cfRot" style="display:none">Rotate</button><button class="btn" id="cfNo">Cancel</button><button class="btn on" id="cfOk">Place</button></div>
+<div id="dlg"><div><p id="dlgTxt"></p><div class="row"><button class="btn" id="dlgNo">Cancel</button><button class="btn on" id="dlgYes" style="background:#c0392b;border-color:#ff8a7a">Start over</button></div></div></div>
+<div id="bottom"><div id="tabs"></div><div id="items"></div></div>
+<div id="sheet"><div class="hd" id="sheetTabs"></div><div id="sheetbody"></div></div>
+<div id="start">
+  <h1>MOON CITY</h1>
+  <p data-i="intro">Build a lunar colony. The night lasts 14.75 days, so solar power fails. Mine polar ice for water and oxygen, shield your habitats and link everything with transit tubes.</p>
+  <div id="slots"></div>
+  <button class="btn on" id="bContinue" style="display:none">Continue</button>
+  <button class="btn" id="bNew" style="display:none">New Colony</button>
+  <p style="font-size:12px">Drag to pan, pinch to zoom, tap to place. With a Zone or Tube tool, drag with one finger to paint and use two fingers to pan.</p>
+</div>
+<div id="over"><h1>Colony Bankrupt</h1><p>Credits stayed below -5,000 for three months in a row.</p><button class="btn on" id="bRestart">Restart</button></div>
+</div>
+<script>
+'use strict';
+/* ==========================================================================
+   MOON CITY - stage 1
+   Sections: CONFIG, i18n, DEFS (data table), state, simulation (pure logic),
+   rendering, input, UI, save/load, hooks.
+   ========================================================================== */
+
+/* ===================== CONFIG (all tunable numbers live here) ===================== */
+const CONFIG = {
+  gridSize: 48,            // map is gridSize x gridSize tiles
+  tileW: 64, tileH: 32,    // isometric tile size in world pixels
+  startMoney: 15000,
+  cycleSeconds: 360,       // real seconds (at 1x) for one lunar cycle = 29.5 Earth days. Settings slider changes this.
+  daysPerCycle: 29.5,      // Earth days per lunar cycle (about half is sunlit, half is night)
+  dayFraction: 0.5,        // fraction of the cycle that is sunlit (~14.75 days)
+  startPhase: 0.04,        // game starts shortly after lunar dawn
+  twilight: 0.012,         // fraction of a cycle for dawn/dusk ramp
+  monthsPerCycle: 12,      // "months" (income ticks) per lunar cycle
+  gameOverMoney: -5000, gameOverMonths: 3,
+  autosaveSeconds: 30,
+  difficulty: 1,           // 0.5 easy .. 1.5 hard: scales maintenance up and tax income down
+  simStep: 0.5,            // simulation step in game seconds
+  // growth
+  spawnRate: 0.15,         // chance per second per empty, connected zone tile at demand 1
+  upgradeRate: 0.02,
+  downgradeRate: 0.04,
+  popGrowth: 0.03,         // fraction of the gap to target housing filled per second
+  popLeave: 0.08,          // fraction leaving per second when life support fails
+  workforce: 0.55,         // share of residents that work
+  // life support units per resident / job
+  waterPerResident: 0.05, oxygenPerResident: 0.05, waterPerJob: 0.012, oxygenPerJob: 0.012,
+  // transit
+  tripsPerResident: 0.25, tripsPerJob: 0.15,
+  tubeCapacity: { street: 4, main: 14, station: 74 },
+  tubeMaintenance: { street: 0.6, main: 1.5, station: 8 },
+  tubeCost: { street: 15, main: 45, station: 600 },
+  congestionStart: 0.7, congestionRange: 0.6, congestionIncomePenalty: 0.4,
+  // shielding
+  shield: { surface: 0.2, built: 0.8, other: 0.4, regolith: 0.8, regolithCostPerTile: 80, good: 0.75, happinessWeight: 25 },
+  nuclearBuffer: 4,        // no residential within this many tiles of a reactor
+  parkRadius: 7,           // dome park happiness radius (tiles)
+  parkHappiness: 14, parkOxygenBonus: 12,
+  // economy (credits per month)
+  taxBase: { R: 0.25, C: 0.5, I: 0.5, T: 0.5 },
+  defaultTax: 9,
+  exportPerIndJob: 5, touristIncome: 5, spaceportIncome: 200,
+  zoneUpkeep: 0.5,         // per built zone tile per level per month
+  // happiness
+  happiness: { base: 62, blackout: -35, noLife: -30, congestion: -18, dust: -12, tourism: 6, unemployment: -15, taxWeight: 1.2, med: 6, police: 3, fire: 3, smooth: 0.08 },
+  levelCostCrater: 55, levelCostMountain: 130, tourismMinHappiness: 50, tourismNoPort: 0.6,
+  capsuleMax: 70,
+  incomeScale: 0.6,        // multiplies ALL monthly income (taxes, exports, tourism, spaceport). Lower = harder early game
+  upkeepScale: 1.15,       // multiplies monthly maintenance
+  mergeRate: 0.04,         // chance per second (x demand) that a fully grown 2x2 block merges into one big building
+  mergeDemand: 0.0,        // demand needed before merging
+  mergeHappiness: 60,
+  zonePaintSpacing: 2,     // while dragging a zone, paint only every Nth new tile (1 = every tile)
+  dragThreshold: 14,       // pixels a finger must move before a tap becomes a drag
+  placeCooldownMs: 600     // ignore taps this long after placing a building (double-tap guard)
+};
+const SAVE_KEY = 'mooncity.save.v1';
+
+/* ===================== i18n (English now; add Hebrew by adding a dictionary) ===================== */
+const I18N = { en: {}, /* he: { 'Credits': '...' } */ };
+let LANG = 'en';
+function T(k) { const d = I18N[LANG]; return (d && d[k] !== undefined) ? d[k] : k; }
+
+/* ===================== DEFS: building data table (new buildings = new rows) ===================== */
+// power: + produces MW, - consumes MW. storage: MWh. needsTube: must be linked to the hub by tubes.
+// needsLife: stops working without water/oxygen. shield: radiation shielding 0..1
+const DEFS = {
+  hub:      { name: 'Landing Hub', kind: 'hub', w: 3, h: 3, cost: 0, power: -5, jobs: 10, maint: 0, shield: 0.5, height: 14, color: '#9fb2c8', needsTube: false, needsLife: false, fixed: true },
+  solar:    { name: 'Solar Array', kind: 'solar', w: 2, h: 2, cost: 600, power: 40, maint: 6, shield: 0.1, height: 2, color: '#28509e', needsTube: false },
+  nuclear:  { name: 'Fission Reactor', kind: 'nuclear', w: 3, h: 3, cost: 9000, power: 160, cooling: 8, jobs: 12, maint: 60, shield: 0.6, height: 16, color: '#b9b9c8', needsTube: false, buffer: true },
+  battery:  { name: 'Battery Bank', kind: 'battery', w: 1, h: 2, cost: 900, storage: 6000, maint: 10, shield: 0.3, height: 7, color: '#3f8f6a', needsTube: false },
+  ice:      { name: 'Ice Mining Outpost', kind: 'ice', w: 2, h: 2, cost: 1500, power: -8, rawWater: 70, jobs: 5, maint: 15, shield: 0.3, height: 9, color: '#7fa6c9', needsTube: true, needsLife: false, iceOnly: true },
+  plant:    { name: 'Water Processing Plant', kind: 'plant', w: 2, h: 2, cost: 2500, power: -15, process: 90, jobs: 8, maint: 25, shield: 0.3, height: 10, color: '#4f93b8', needsTube: true, needsLife: false },
+  dome3:    { name: 'Dome Park (3x3)', kind: 'dome', w: 3, h: 3, cost: 2800, power: -8, water: 2, oxygen: 12, jobs: 4, maint: 30, shield: 0.4, height: 0, color: '#58b36a', needsTube: true, needsLife: false },
+  dome4:    { name: 'Dome Park (4x4)', kind: 'dome', w: 4, h: 4, cost: 5000, power: -12, water: 3, oxygen: 20, jobs: 6, maint: 50, shield: 0.4, height: 0, color: '#58b36a', needsTube: true, needsLife: false },
+  medical:  { name: 'Medical Center', kind: 'civic', w: 2, h: 2, cost: 2200, power: -4, jobs: 10, maint: 25, service: 'med', cover: 600, shield: 0.4, height: 8, color: '#e5eef8', accent: '#ff5a5a', needsTube: true },
+  police:   { name: 'Safety Station', kind: 'civic', w: 2, h: 1, cost: 1400, power: -3, jobs: 6, maint: 18, service: 'police', cover: 800, shield: 0.4, height: 6, color: '#7f93c4', accent: '#4aa3ff', needsTube: true },
+  fire:     { name: 'Emergency Response', kind: 'civic', w: 2, h: 1, cost: 1400, power: -3, jobs: 6, maint: 18, service: 'fire', cover: 800, shield: 0.4, height: 6, color: '#c98a6b', accent: '#ffb347', needsTube: true },
+  spaceport:{ name: 'Spaceport', kind: 'spaceport', w: 4, h: 4, cost: 12000, power: -20, jobs: 25, maint: 80, shield: 0.3, height: 4, color: '#8b95a8', needsTube: true }
+};
+// Zone growth tables (per level 1..3)
+const LMDEF = (n, w, h, col, ht, tour, hint) => ({ name: n, kind: 'landmark', landmark: true, w, h, cost: 0, power: 0, jobs: 0, maint: 0, shield: 0.4, height: ht, color: col, tourists: tour, needsTube: false, hint });
+Object.assign(DEFS, {
+  statue: LMDEF('Astronaut Monument', 2, 2, '#d8d8ea', 30, 40), obs: LMDEF('Moon Observatory', 3, 3, '#cfd8ee', 20, 60),
+  flag: LMDEF('Flag Plaza', 2, 2, '#e8dca0', 26, 30), tower: LMDEF('Earthview Tower', 2, 2, '#b8c6ee', 54, 80),
+  garden: LMDEF('Crystal Garden', 3, 3, '#7fd6a0', 16, 50), arch: LMDEF('Gateway Arch', 3, 2, '#ecc4a4', 30, 50)
+});
+const MILESTONES = [100, 250, 500, 1000, 2000, 4000, 8000];
+const ZONES = {
+  R: { name: 'Residential', cost: 18, color: '#4cd98a', names: ['Habitat Pod', 'Habitat Block', 'High-rise Habitat', 'Habitat Complex'], housing: [4, 16, 60, 340], power: [0.5, 2, 6, 36], height: [4, 8, 16, 28], bcol: ['#d7c7a6', '#c9d4e6', '#b9c8f0', '#aab8f2'] },
+  C: { name: 'Commercial', cost: 20, color: '#4aa3ff', names: ['Shop', 'Market', 'Office Tower', 'Commercial Plaza'], jobs: [3, 10, 30, 170], power: [1, 3, 8, 44], height: [4, 8, 17, 28], bcol: ['#7fb3ff', '#6a9cf0', '#5a8ae0', '#4f80d8'] },
+  I: { name: 'Industrial', cost: 20, color: '#ffc84a', names: ['Regolith Processor', 'Fabrication Plant', '3D-Print Factory', 'Industrial Complex'], jobs: [4, 12, 35, 200], power: [3, 8, 20, 110], height: [5, 9, 13, 18], bcol: ['#c9a85a', '#b99a4c', '#a88a40', '#a08038'] },
+  T: { name: 'Tourism', cost: 40, color: '#c77dff', names: ['Guest Pod', 'Hotel', 'Low-g Arena', 'Resort Dome'], jobs: [3, 10, 30, 170], power: [2, 6, 14, 78], tourists: [10, 40, 120, 640], height: [4, 9, 12, 16], bcol: ['#e0b4ff', '#d49cf5', '#c586ea', '#bb78e8'] }
+};
+for (const k of Object.keys(DEFS)) { const d = DEFS[k]; if (d.w !== d.h) DEFS[k + '_r'] = Object.assign({}, d, { w: d.h, h: d.w, rotated: true }); }
+const curDef = () => (ui.rot && DEFS[ui.tool.def + '_r']) ? ui.tool.def + '_r' : ui.tool.def;
+const ZK = ['', 'R', 'C', 'I', 'T'];
+/* Toolbar: tabs -> tools */
+const TOOLS = {
+  inspect: { id: 'inspect', kind: 'inspect', name: 'Inspect', hint: 'Tap a tile or building for details. Drag to pan.' },
+  bulldoze: { id: 'bulldoze', kind: 'bulldoze', name: 'Bulldoze', cost: 0, drag: true, hint: 'Tap or drag to remove tubes, zones and buildings.' },
+  regolith: { id: 'regolith', kind: 'regolith', name: 'Regolith Cover', cost: CONFIG.shield.regolithCostPerTile, hint: 'Optional: tap a HOME (residential) to pile moon dust on it. More radiation shielding means happier, faster-growing residents.' },
+  zR: { id: 'zR', kind: 'zone', z: 1, name: 'Residential', cost: 18, drag: true, hint: 'Drag to paint a residential zone. Needs a tube nearby. Homes come with moon-dust radiation shielding built in.' },
+  zC: { id: 'zC', kind: 'zone', z: 2, name: 'Commercial', cost: 20, drag: true, hint: 'Drag to paint a commercial zone.' },
+  zI: { id: 'zI', kind: 'zone', z: 3, name: 'Industrial', cost: 20, drag: true, hint: 'Drag to paint an industrial zone.' },
+  zT: { id: 'zT', kind: 'zone', z: 4, name: 'Tourism', cost: 40, drag: true, hint: 'Drag to paint a tourism zone. Pays very well. Needs a tube, power and happiness 50+. A Spaceport raises tourist income by 1.7x.' },
+  zClear: { id: 'zClear', kind: 'zone', z: 0, name: 'Clear Zone', cost: 0, drag: true, hint: 'Drag to clear empty zones.' },
+  tubeMain: { id: 'tubeMain', kind: 'tube', t: 2, name: 'Main Tube', cost: CONFIG.tubeCost.main, drag: true, hint: 'Drag to draw fast Main Tubes. Link buildings to the Landing Hub.' },
+  tubeStreet: { id: 'tubeStreet', kind: 'tube', t: 1, name: 'Street Tube', cost: CONFIG.tubeCost.street, drag: true, hint: 'Drag to draw cheap Street Tubes inside districts.' },
+  level: { id: 'level', kind: 'level', name: 'Level terrain', cost: CONFIG.levelCostCrater, drag: true, hint: 'Drag over craters (55 cr per tile) or mountains (130 cr per tile) to flatten them so you can build there.' },
+  restart: { id: 'restart', kind: 'restart', name: 'Start over', cost: 0, hint: 'Delete this colony and start a new one.' },
+  station: { id: 'station', kind: 'station', name: 'Tube Station', cost: CONFIG.tubeCost.station, hint: 'Tap an existing tube tile to add a station (+capacity).' }
+};
+for (const id in DEFS) TOOLS[id] = { id, kind: 'build', def: id, name: DEFS[id].name, cost: DEFS[id].cost, hint: DEFS[id].name + ': tap the map to place. Drag to pan.' };
+const TABS = [
+  { id: 'zones', label: 'Zones', items: ['zR', 'zC', 'zI', 'zT', 'zClear'] },
+  { id: 'power', label: 'Power', items: ['solar', 'nuclear', 'battery'] },
+  { id: 'life', label: 'Life', items: ['ice', 'plant', 'dome3', 'dome4'] },
+  { id: 'tubes', label: 'Tubes', items: ['tubeMain', 'tubeStreet', 'station'] },
+  { id: 'civic', label: 'Civic', items: ['medical', 'police', 'fire', 'spaceport'] },
+  { id: 'lm', label: 'Sights', items: ['statue', 'obs', 'flag', 'tower', 'garden', 'arch'] },
+  { id: 'tools', label: 'Tools', items: ['inspect', 'bulldoze', 'level', 'restart'] }
+];
+
+/* ===================== Hooks for later rounds (stubs only) ===================== */
+const HOOKS = {
+  disasters: function (S, dt) { /* meteorite strikes, solar flares, power failures - not implemented in stage 1 */ },
+  research: function (S, dt) { /* research / tech tree - not implemented */ },
+  undergroundLayer: null,     // lava-tube expansion as a second map layer - placeholder
+  languages: ['en']           // add 'he' (RTL) later via I18N
+};
+
+/* ===================== State ===================== */
+let N = CONFIG.gridSize; const TW = CONFIG.tileW, TH = CONFIG.tileH;
+let S = null;
+function mkCell() { return { terr: 0, zone: 0, lvl: 0, tube: 0, shield: 0, b: 0, conn: false, mp: 0, mega: 0 }; }
+function idx(x, y) { return y * N + x; }
+function inb(x, y) { return x >= 0 && y >= 0 && x < N && y < N; }
+function cell(x, y) { return S.cells[y * N + x]; }
+
+function newGame() {
+  S = {
+    v: 1, time: CONFIG.startPhase * CONFIG.cycleSeconds, cycle: 1,
+    money: CONFIG.startMoney, pop: 0, happiness: 62, storage: 0,
+    tax: { R: CONFIG.defaultTax, C: CONFIG.defaultTax, I: CONFIG.defaultTax, T: CONFIG.defaultTax },
+    settings: { cycleSeconds: CONFIG.cycleSeconds, difficulty: CONFIG.difficulty },
+    cells: [], buildings: [], nextId: 1, bmap: {}, monthAcc: 0, month: 0, negMonths: 0, gameOver: false,
+    lm: 0, lmBuilt: 0, msIdx: 0, msNew: 0, lifeBadTime: 0, coolRatio: 1, light: 1, dirty: true, saveAcc: 0,
+    last: { income: 0, expense: 0, net: 0 },
+    stats: {}, demand: { R: 0, C: 0, I: 0 }, alerts: {}
+  };
+  for (let i = 0; i < N * N; i++) S.cells.push(mkCell());
+  genTerrain();
+  const ox = (N - 32) >> 1;
+  addBuilding('hub', 14 + ox, 14, true);
+  for (let y = 6; y <= 13; y++) { const c = cell(15 + ox, y); c.tube = 2; }
+  addBuilding('ice', 15 + ox, 4, true);
+  addBuilding('solar', 10 + ox, 12, true); addBuilding('solar', 10 + ox, 15, true); addBuilding('solar', 10 + ox, 18, true);
+  S.dirty = true;
+  terrainCache = null;
+  stepOnce(0.001);
+}
+function genTerrain() {
+  const ox = (N - 32) >> 1;
+  // polar shadowed crater with ice at the top of the map
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const dx = (x + 0.5 - 15.5 - ox) / 6, dy = (y + 0.5 - 3.6) / 2.9, d = dx * dx + dy * dy;
+    const c = cell(x, y);
+    if (d < 1) c.terr = 2; else if (d < 1.5) c.terr = 3;
+  }
+  const rng0 = mulberry(31 + (Math.random() * 1e6 | 0));
+  // extra ice deposits to mine, away from the hub and from each other
+  const iceAt = [[15.5 + ox, 3.6]];
+  for (let k = 0, tries = 0; k < Math.round(4 * N * N / 1024) + 2 && tries++ < 400;) {
+    const cx = 4 + rng0() * (N - 8), cy = 8 + rng0() * (N - 12), rx = 2.2 + rng0() * 1.2, ry = 1.7 + rng0() * 0.9;
+    if (Math.hypot(cx - 15.5 - ox, cy - 15.5) < 9) continue;
+    if (iceAt.some(p => Math.hypot(p[0] - cx, p[1] - cy) < 9)) continue;
+    iceAt.push([cx, cy]);
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const dx = (x + 0.5 - cx) / rx, dy = (y + 0.5 - cy) / ry, d = dx * dx + dy * dy, c = cell(x, y); if (d < 1) c.terr = 2; else if (d < 1.5 && c.terr === 0) c.terr = 3; }
+    k++;
+  }
+  // mountains (not buildable)
+  for (let k = 0, tries = 0; k < Math.round(4 * N * N / 1024) && tries++ < 400;) {
+    const cx = 2 + rng0() * (N - 4), cy = 8 + rng0() * (N - 10), r = 1.0 + rng0() * 1.3;
+    if (Math.hypot(cx - 15.5 - ox, cy - 15.5) < 8 + r) continue;
+    let ok = true; for (let y = 0; y < N && ok; y++) for (let x = 0; x < N; x++) { if (Math.hypot(x + 0.5 - cx, y + 0.5 - cy) < r + 1 && cell(x, y).terr === 2) { ok = false; break; } }
+    if (!ok) continue;
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const c = cell(x, y); if (Math.hypot(x + 0.5 - cx, y + 0.5 - cy) < r && (c.terr === 0 || c.terr === 3)) c.terr = 7; }
+    k++;
+  }
+  // buildable surface variety: dark basalt, bright highland dust, boulder fields
+  const vn = (x, y, sc, sd) => { const gx = x / sc, gy = y / sc, ix = Math.floor(gx), iy = Math.floor(gy), fx = gx - ix, fy = gy - iy, u = fx * fx * (3 - 2 * fx), v = fy * fy * (3 - 2 * fy), h = (a, b) => hash2(a + sd, b + sd * 3); return (h(ix, iy) * (1 - u) + h(ix + 1, iy) * u) * (1 - v) + (h(ix, iy + 1) * (1 - u) + h(ix + 1, iy + 1) * u) * v; };
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const c = cell(x, y); if (c.terr !== 0) continue; const n = vn(x, y, 6, 11) * 0.7 + vn(x, y, 3, 5) * 0.3; if (n > 0.64) c.terr = 5; else if (n < 0.34) c.terr = 4; }
+  for (let k = 0; k < Math.round(3 * N * N / 1024); k++) { const cx = 2 + rng0() * (N - 4), cy = 6 + rng0() * (N - 8), r = 1.4 + rng0() * 1.4; for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const c = cell(x, y); if ((c.terr === 0 || c.terr === 4 || c.terr === 5) && Math.hypot(x + 0.5 - cx, y + 0.5 - cy) < r) c.terr = 6; } }
+  // ordinary craters (non-buildable floors with rims)
+  const rng = mulberry(7 + (Math.random() * 1e6 | 0));
+  let placed = 0, tries = 0;
+  const wantC = Math.round(5 * N * N / 1024);
+  while (placed < wantC && tries++ < 600) {
+    const cx = 2 + rng() * (N - 4), cy = 8 + rng() * (N - 10), r = 1 + rng() * 1.5;
+    if (Math.hypot(cx - 15.5 - ox, cy - 15.5) < 6.5 + r) continue;
+    if (cx > 8 + ox && cx < 13 + ox && cy > 10 && cy < 20) continue;
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const d = Math.hypot(x + 0.5 - cx, y + 0.5 - cy), c = cell(x, y);
+      if (c.terr === 2 || c.terr === 7) continue;
+      if (d < r * 0.65) c.terr = 1; else if (d < r + 0.6 && c.terr !== 1) c.terr = 3;
+    }
+    placed++;
+  }
+}
+function mulberry(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function hash2(x, y) { let h = (x * 374761393 + y * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
+
+
+/* ---- merged 2x2 buildings: bottom-right cell is the anchor (mega=1), the other three are parts (mp=1) ---- */
+function zl(c) { return c.mega ? 3 : c.lvl - 1; }
+function anchorOf(x, y) {
+  const c = cell(x, y); if (!c.mp) return [x, y];
+  for (const [dx, dy] of [[1, 0], [0, 1], [1, 1]]) { const nx = x + dx, ny = y + dy; if (inb(nx, ny) && cell(nx, ny).mega) return [nx, ny]; }
+  return [x, y];
+}
+function unmerge(ax, ay) { for (let j = -1; j <= 0; j++) for (let i = -1; i <= 0; i++) { const c = cell(ax + i, ay + j); c.mp = 0; c.mega = 0; } }
+function tryMerge(x, y) { // x,y = top-left of a 2x2 candidate
+  if (!inb(x + 1, y + 1)) return false;
+  const z = cell(x, y).zone, cs = [cell(x, y), cell(x + 1, y), cell(x, y + 1), cell(x + 1, y + 1)];
+  let sh = 9, any = false;
+  for (const c of cs) { if (c.zone !== z || c.lvl !== 3 || c.mega || c.mp || c.b || c.tube) return false; sh = Math.min(sh, c.shield); any = any || c.conn; }
+  if (!any) return false;
+  for (const c of cs) { c.mp = 1; c.shield = sh; }
+  const a = cs[3]; a.mp = 0; a.mega = 1; a.conn = true; startAnim(x + 1, y + 1); return true;
+}
+const anim = {}; let LOD = 1;
+function startAnim(x, y) { anim[y * N + x] = performance.now(); if (typeof wakeUntil !== 'undefined') wakeUntil = performance.now() + 1700; }
+function tryMerge4(x, y) { const o = [[0, 0], [-1, 0], [0, -1], [-1, -1]]; o.sort(() => Math.random() - 0.5); for (const [dx, dy] of o) if (inb(x + dx, y + dy) && tryMerge(x + dx, y + dy)) return true; return false; }
+/* ===================== Placement / editing API (used by UI and tests) ===================== */
+function addBuilding(id, x, y, free) {
+  const d = DEFS[id];
+  const b = { id: S.nextId++, def: id, x, y, shield: d.shield, conn: false };
+  S.buildings.push(b); S.bmap[b.id] = b; if (!free) startAnim(x + d.w - 1, y + d.h - 1);
+  for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) { const c = cell(x + i, y + j); c.b = b.id; c.zone = 0; c.lvl = 0; }
+  S.dirty = true; return b;
+}
+function removeBuilding(b) {
+  const d = DEFS[b.def];
+  for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) cell(b.x + i, b.y + j).b = 0;
+  S.buildings.splice(S.buildings.indexOf(b), 1); delete S.bmap[b.id]; S.dirty = true;
+}
+function bufferBlocked(x, y, w, h, r) { // any residential zone/building within r tiles of footprint?
+  for (let j = y - r; j < y + h + r; j++) for (let i = x - r; i < x + w + r; i++) {
+    if (!inb(i, j)) continue; if (cell(i, j).zone === 1) return true;
+  }
+  return false;
+}
+function nearReactor(x, y, r) {
+  for (const b of S.buildings) { const d = DEFS[b.def]; if (!d.buffer) continue;
+    if (x >= b.x - r && x < b.x + d.w + r && y >= b.y - r && y < b.y + d.h + r) return true; }
+  return false;
+}
+function canPlace(id, x, y) {
+  const d = DEFS[id];
+  if (x < 0 || y < 0 || x + d.w > N || y + d.h > N) return T('Outside the map');
+  for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) {
+    const c = cell(x + i, y + j);
+    if (c.b) return T('Tile occupied');
+    if (c.tube) return T('A tube is in the way');
+    if (c.zone && c.lvl > 0) return T('A built zone is in the way (bulldoze first)');
+    if (c.terr === 1) return T('Crater floor, cannot build');
+    if (c.terr === 7) return T('Mountain, cannot build');
+    if (d.iceOnly) { if (c.terr !== 2) return T('Ice Outpost must sit fully on ice tiles (blue, polar crater)'); }
+    else if (c.terr === 2) return T('Ice tiles are reserved for ice mining');
+  }
+  if (d.buffer && bufferBlocked(x, y, d.w, d.h, CONFIG.nuclearBuffer)) return T('Residential zone within 4 tiles of reactor');
+  return '';
+}
+function placeBuilding(id, x, y) {
+  const d = DEFS[id], err = canPlace(id, x, y);
+  if (err) return err;
+  if (d.landmark) { if ((S.lm || 0) <= 0) return T('No free landmark yet. Grow your population to the next milestone.'); S.lm--; S.lmBuilt = (S.lmBuilt || 0) + 1; }
+  if (S.money < d.cost) return T('Not enough credits');
+  // clear empty zones underneath
+  for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) { const c = cell(x + i, y + j); c.zone = 0; c.lvl = 0; }
+  S.money -= d.cost; addBuilding(id, x, y); return '';
+}
+function setZone(z, x, y) {
+  if (!inb(x, y)) return '';
+  const c = cell(x, y);
+  if (c.b || c.tube || c.terr === 1 || c.terr === 2 || c.terr === 7) return T('Cannot zone here');
+  if (c.zone === z) return '';
+  if (c.lvl > 0 && z !== 0) return T('Tile already built');
+  if (z === 0) { if (c.lvl > 0) return ''; c.zone = 0; return ''; }
+  if (z === 1 && nearReactor(x, y, CONFIG.nuclearBuffer)) return T('Too close to the reactor for housing');
+  const cost = ZONES[ZK[z]].cost;
+  if (S.money < cost) return T('Not enough credits');
+  S.money -= cost; c.zone = z; c.lvl = 0; return '';
+}
+function paintTube(t, x, y) {
+  if (!inb(x, y)) return '';
+  const c = cell(x, y);
+  if (c.b || c.terr === 1 || c.terr === 2 || c.terr === 7) return T('Cannot build a tube here');
+  if (c.lvl > 0) return T('Zone building in the way');
+  if (c.tube === t || (c.tube === 3 && t === 2)) return '';
+  const cost = t === 2 ? CONFIG.tubeCost.main : CONFIG.tubeCost.street;
+  if (c.tube === 2 && t === 1) return '';
+  if (S.money < cost) return T('Not enough credits');
+  S.money -= cost; c.tube = (c.tube === 3 ? 3 : t); c.zone = 0; S.dirty = true; return '';
+}
+function levelTile(x, y) {
+  if (!inb(x, y)) return '';
+  const c = cell(x, y); if (c.terr !== 1 && c.terr !== 7) return '';
+  const cost = c.terr === 7 ? CONFIG.levelCostMountain : CONFIG.levelCostCrater;
+  if (S.money < cost) return T('Not enough credits');
+  S.money -= cost; c.terr = 0; terrainCache = null; return '';
+}
+function addStation(x, y) {
+  if (!inb(x, y)) return '';
+  const c = cell(x, y);
+  if (!c.tube) return T('Stations go on an existing tube tile');
+  if (c.tube === 3) return T('Already a station');
+  if (S.money < CONFIG.tubeCost.station) return T('Not enough credits');
+  S.money -= CONFIG.tubeCost.station; c.tube = 3; S.dirty = true; return '';
+}
+function bulldoze(x, y) {
+  if (!inb(x, y)) return '';
+  const c = cell(x, y);
+  if (c.b) { const b = S.bmap[c.b]; if (DEFS[b.def].fixed) return T('The Landing Hub cannot be removed'); removeBuilding(b); return ''; }
+  if (c.tube) { c.tube = 0; S.dirty = true; return ''; }
+  if (c.zone) { const [ax, ay] = anchorOf(x, y); if (cell(ax, ay).mega) { for (let j = -1; j <= 0; j++) for (let i = -1; i <= 0; i++) { const q = cell(ax + i, ay + j); q.zone = 0; q.lvl = 0; q.shield = 0; q.mp = 0; q.mega = 0; } return ''; } c.zone = 0; c.lvl = 0; c.shield = 0; return ''; }
+  return '';
+}
+function addRegolith(x, y) {
+  if (!inb(x, y)) return '';
+  [x, y] = anchorOf(x, y);
+  const c = cell(x, y);
+  if (c.zone === 1 && c.lvl > 0) {
+    if (c.shield >= CONFIG.shield.regolith) return T('Already buried in regolith');
+    const n = c.mega ? 4 : 1, cost = CONFIG.shield.regolithCostPerTile * n;
+    if (S.money < cost) return T('Not enough credits');
+    S.money -= cost; c.shield = CONFIG.shield.regolith;
+    if (c.mega) for (let j = -1; j <= 0; j++) for (let i = -1; i <= 0; i++) cell(x + i, y + j).shield = CONFIG.shield.regolith;
+    return '';
+  }
+  if (c.b || (c.zone && c.lvl > 0)) return T('Only housing (residential) needs shielding');
+  return T('Nothing to cover here');
+}
+
+/* ===================== Simulation (pure logic: no DOM, no drawing) ===================== */
+function phaseOf(t) { const cs = S.settings.cycleSeconds; return ((t % cs) + cs) % cs / cs; }
+function sunlight(phase) {
+  const f = CONFIG.dayFraction, tw = CONFIG.twilight;
+  if (phase < f) return Math.min(1, Math.min(phase, f - phase) / tw + 0.0001) > 0 ? Math.min(1, Math.min(phase / tw, (f - phase) / tw)) : 0;
+  return 0;
+}
+function hoursPerSecond() { return CONFIG.daysPerCycle * 24 / S.settings.cycleSeconds; }
+
+function rebuildConn() {
+  const conn = new Uint8Array(N * N), q = [];
+  const hubAdj = (x, y) => { for (const [dx, dy] of D4) { const nx = x + dx, ny = y + dy; if (inb(nx, ny)) { const c = cell(nx, ny); if (c.b && S.bmap[c.b].def === 'hub') return true; } } return false; };
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (cell(x, y).tube && hubAdj(x, y)) { conn[idx(x, y)] = 1; q.push([x, y]); }
+  while (q.length) { const [x, y] = q.pop(); for (const [dx, dy] of D4) { const nx = x + dx, ny = y + dy; if (inb(nx, ny) && !conn[idx(nx, ny)] && cell(nx, ny).tube) { conn[idx(nx, ny)] = 1; q.push([nx, ny]); } } }
+  S.connT = conn;
+  const nbConn = (x, y, self) => { for (const [dx, dy] of D4) { const nx = x + dx, ny = y + dy; if (!inb(nx, ny)) continue; const c = cell(nx, ny); if (conn[idx(nx, ny)]) return true; if (c.b && c.b !== self && S.bmap[c.b].def === 'hub') return true; } return false; };
+  for (const b of S.buildings) {
+    const d = DEFS[b.def]; b.conn = (b.def === 'hub');
+    if (!b.conn) for (let j = 0; j < d.h && !b.conn; j++) for (let i = 0; i < d.w && !b.conn; i++) if (nbConn(b.x + i, b.y + j, b.id)) b.conn = true;
+  }
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const c = cell(x, y); c.conn = (c.zone && !c.b && !c.tube) ? nbConn(x, y, 0) : false; }
+  { const d1 = []; for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const c = cell(x, y); if (c.zone && !c.b && !c.tube && !c.conn) for (const [dx, dy] of D4) { const nx = x + dx, ny = y + dy; if (inb(nx, ny)) { const n = cell(nx, ny); if (n.zone && n.conn && !n.b && !n.tube) { d1.push(c); break; } } } } for (const c of d1) c.conn = true; } // zones two tiles deep from a tube count as connected
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const c = cell(x, y); if (c.mega) c.conn = c.conn || cell(x - 1, y).conn || cell(x, y - 1).conn || cell(x - 1, y - 1).conn; }
+  S.tubeList = []; for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (cell(x, y).tube) S.tubeList.push([x, y]);
+  S.dirty = false;
+}
+const D4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+
+function stepOnce(dt) {
+  if (S.gameOver) return;
+  const cfg = CONFIG, st = {}; S.stats = st;
+  S.time += dt;
+  const ph = phaseOf(S.time); S.phase = ph; S.cycle = 1 + Math.floor(S.time / S.settings.cycleSeconds);
+  const light = sunlight(ph); S.light = light; st.light = light;
+  const hrs = dt * hoursPerSecond();
+  if (S.dirty) rebuildConn();
+
+  // ---- aggregate buildings and zone tiles ----
+  let solarCap = 0, nucCap = 0, battCap = 0, demand = 0, rawWater = 0, plantCap = 0, coolDemand = 0, domeO2 = 0, domeW = 0;
+  let housing = 0, jobsC = 0, jobsI = 0, jobsT = 0, jobsP = 0, tourists = 0, shieldSum = 0, shieldW = 0;
+  let lmN = 0; let hasPort = false, med = 0, pol = 0, fire = 0, nWaitConn = 0, builtZones = 0, maint = 0;
+  const domes = [], dust = new Float32Array(N * N);
+  for (const b of S.buildings) {
+    const d = DEFS[b.def];
+    maint += d.maint || 0;
+    const ok = !d.needsTube || b.conn;
+    if (!ok) continue;
+    if (d.kind === 'solar') solarCap += d.power;
+    else if (d.kind === 'nuclear') { nucCap += d.power; coolDemand += d.cooling; }
+    if (d.storage) battCap += d.storage;
+    if (d.power < 0) demand += -d.power;
+    if (d.rawWater) rawWater += d.rawWater;
+    if (d.process) plantCap += d.process;
+    if (d.landmark) { lmN++; tourists += d.tourists; }
+    if (d.kind === 'dome') { domeO2 += d.oxygen; domeW += d.water; domes.push([b.x + d.w / 2, b.y + d.h / 2, d.oxygen]); }
+    jobsP += d.jobs || 0;
+    if (d.kind === 'spaceport') hasPort = true;
+    if (d.service === 'med') med += d.cover; else if (d.service === 'police') pol += d.cover; else if (d.service === 'fire') fire += d.cover;
+  }
+  const zoneCells = [];
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const c = cell(x, y);
+    if (c.tube) { maint += cfg.tubeMaintenance[c.tube === 1 ? 'street' : c.tube === 2 ? 'main' : 'station']; }
+    if (c.zone && c.lvl > 0 && !c.b) {
+      if (c.mp) continue;
+      const z = ZONES[ZK[c.zone]], L = zl(c);
+      builtZones++; maint += cfg.zoneUpkeep * (c.mega ? 13 : c.lvl);
+      if (!c.conn) continue;
+      demand += z.power[L];
+      zoneCells.push([x, y, c]);
+      if (c.zone === 1) { housing += z.housing[L]; shieldSum += (c.shield || 0) * z.housing[L]; shieldW += z.housing[L]; }
+      else if (c.zone === 2) jobsC += z.jobs[L];
+      else if (c.zone === 3) { jobsI += z.jobs[L]; for (let j = -4; j <= 4; j++) for (let i = -4; i <= 4; i++) if (inb(x + i, y + j)) dust[idx(x + i, y + j)] += (c.mega ? 6 : c.lvl); }
+      else if (c.zone === 4) { jobsT += z.jobs[L]; tourists += z.tourists[L]; }
+    }
+  }
+  st.maintenance = maint * S.settings.difficulty * cfg.upkeepScale;
+
+  // ---- power ----
+  const nucOut = nucCap * S.coolRatio;
+  const solarOut = solarCap * light;
+  const supply = solarOut + nucOut;
+  battCap = Math.max(battCap, 0);
+  if (S.storage > battCap) S.storage = battCap;
+  let blackout = false, flow = 0;
+  if (supply >= demand) { const add = Math.min((supply - demand) * hrs, battCap - S.storage); S.storage += add; flow = add / (hrs || 1); }
+  else {
+    const deficit = demand - supply;
+    if (S.storage >= deficit * hrs) { S.storage -= deficit * hrs; flow = -deficit; }
+    else { flow = -Math.min(deficit, S.storage / (hrs || 1)); S.storage = 0; blackout = true; }
+  }
+  st.solarCap = solarCap; st.solarOut = solarOut; st.nucCap = nucCap; st.nucOut = nucOut; st.battCap = battCap; st.demand = demand; st.supply = supply; st.flow = flow;
+  st.blackout = blackout; S.blackout = blackout;
+
+  // ---- water & oxygen ----
+  S.coolRatio = coolDemand > 0 ? Math.min(1, rawWater / coolDemand) : 1;
+  const usable = Math.max(0, rawWater - coolDemand);
+  const processed = Math.min(plantCap, usable);
+  const waterSupply = processed;
+  const o2Supply = processed + domeO2;
+  const jobsAll = jobsC + jobsI + jobsT + jobsP;
+  const wDem = S.pop * cfg.waterPerResident + jobsAll * cfg.waterPerJob + domeW;
+  const oDem = S.pop * cfg.oxygenPerResident + jobsAll * cfg.oxygenPerJob;
+  const wRatio = wDem > 0.0001 ? Math.min(1, waterSupply / wDem) : (waterSupply > 0 ? 1 : 0);
+  const oRatio = oDem > 0.0001 ? Math.min(1, o2Supply / oDem) : (o2Supply > 0 ? 1 : 0);
+  const lifeOK = wRatio >= 0.98 && oRatio >= 0.98;
+  S.lifeOK = lifeOK;
+  if (!lifeOK) S.lifeBadTime += dt; else S.lifeBadTime = 0;
+  Object.assign(st, { rawWater, plantCap, waterSupply, o2Supply, wDem, oDem, wRatio, oRatio, lifeOK, coolDemand, coolRatio: S.coolRatio });
+
+  // ---- congestion ----
+  const op = (!blackout && lifeOK) ? 1 : 0;
+  let capT = 0;
+  if (S.connT) for (const [x, y] of S.tubeList) { if (!S.connT[idx(x, y)]) continue; const t = cell(x, y).tube; capT += t === 1 ? cfg.tubeCapacity.street : t === 2 ? cfg.tubeCapacity.main : cfg.tubeCapacity.station; }
+  const trips = S.pop * cfg.tripsPerResident + jobsAll * cfg.tripsPerJob * op;
+  const usage = capT > 0 ? trips / capT : (trips > 0 ? 2 : 0);
+  const cong = clamp((usage - cfg.congestionStart) / cfg.congestionRange, 0, 1);
+  Object.assign(st, { trips, capT, usage, cong });
+
+  // ---- jobs & employment ----
+  const workers = S.pop * cfg.workforce;
+  const unemp = workers > 1 ? Math.max(0, workers - jobsAll * op) / workers : 0;
+  Object.assign(st, { med, pol, fire, cong, housing, jobsC, jobsI, jobsT, jobsP, jobsAll, workers, unemp, tourists, hasPort, op });
+
+  // ---- RCI demand ----
+  const dem = S.demand;
+  let dR = 0.35 + (jobsAll * 1.1 - workers) / Math.max(40, jobsAll) * 0.8;
+  if (housing > S.pop * 1.25 + 8) dR -= 0.5;
+  if (S.happiness < 40) dR -= 0.3;
+  const needC = S.pop * 0.22;
+  let dC = clamp((needC - jobsC) / Math.max(15, needC), -1, 1) * 0.9 + 0.15;
+  let dI = clamp((workers + 10 - jobsC - jobsI - jobsT) / Math.max(30, workers + 10), -1, 1) * 0.8 + 0.2 + (hasPort ? 0.15 : 0);
+  if (jobsI > S.pop * 1.5 + 20) dI -= 0.4;
+  dem.R += (clamp(dR, -1, 1) - dem.R) * 0.2; dem.C += (clamp(dC, -1, 1) - dem.C) * 0.2; dem.I += (clamp(dI, -1, 1) - dem.I) * 0.2;
+  const dT = S.happiness >= cfg.tourismMinHappiness ? (hasPort ? 0.75 : 0.55) : 0;
+
+  // ---- growth ----
+  const growOK = lifeOK && !blackout;
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const c = cell(x, y);
+    if (!c.zone || c.b || c.tube || c.mp) continue;
+    if (c.lvl === 0) {
+      if (!c.conn || !growOK) continue;
+      const k = ZK[c.zone];
+      let d = k === 'T' ? dT : dem[k];
+      if (d <= 0) continue;
+      if (c.zone === 1 && nearReactor(x, y, cfg.nuclearBuffer)) continue;
+      if (Math.random() < cfg.spawnRate * dt * d) { c.lvl = 1; c.shield = c.zone === 1 ? cfg.shield.built : cfg.shield.other; startAnim(x, y); }
+    } else {
+      const k = ZK[c.zone];
+      const bad = !c.conn || (!lifeOK && S.lifeBadTime > 20);
+      c.ab = (bad || S.blackout) ? (c.ab || 0) + dt : 0;
+      if (bad) { if (c.mega) { if (Math.random() < cfg.downgradeRate * dt) unmerge(x, y); continue; } if (Math.random() < cfg.downgradeRate * dt) { c.lvl--; if (c.lvl === 0) c.shield = 0; } continue; }
+      if (c.lvl === 3 && !c.mega && growOK) { const dd = k === 'T' ? dT : dem[k]; if (dd > cfg.mergeDemand && S.happiness > cfg.mergeHappiness && Math.random() < cfg.mergeRate * dt * dd) tryMerge4(x, y); }
+      if (c.lvl < 3 && growOK) {
+        const d = k === 'T' ? dT : dem[k];
+        const hreq = c.lvl === 1 ? 55 : 65;
+        if (d > 0.2 && S.happiness > hreq && Math.random() < cfg.upgradeRate * dt * d) { c.lvl++; startAnim(x, y); }
+      }
+    }
+  }
+
+  // ---- population ----
+  const avgShield = shieldW > 0 ? shieldSum / shieldW : cfg.shield.surface;
+  if (S.pop > 0 && !lifeOK) S.pop = Math.max(0, S.pop - S.pop * cfg.popLeave * dt - 0.05 * dt);
+  else if (lifeOK) {
+    const att = clamp(S.happiness / 80, 0, 1);
+    const target = housing * att;
+    const jobsFactor = Math.min(1, (jobsAll + 8) / (workers + 8));
+    const shieldFactor = clamp(0.4 + avgShield, 0.3, 1);
+    if (!blackout && target > S.pop) S.pop += Math.max(0.15 * dt, (target - S.pop) * cfg.popGrowth * dt * jobsFactor * shieldFactor) * (target - S.pop > 0.2 ? 1 : 0);
+    else if (S.pop > target) S.pop -= (S.pop - target) * cfg.popLeave * 0.3 * dt;
+    if (avgShield < 0.3 && S.pop > 0) S.pop -= S.pop * 0.0015 * (0.3 - avgShield) * 10 * dt;
+  }
+  if (S.pop > housing + 1 && lifeOK) S.pop = Math.max(S.pop - dt * 0.5, housing);
+  S.pop = Math.max(0, S.pop);
+  S.msIdx = S.msIdx || 0; while (S.msIdx < MILESTONES.length && S.pop >= MILESTONES[S.msIdx]) { S.lm = (S.lm || 0) + 1; S.msNew = MILESTONES[S.msIdx]; S.msIdx++; }
+  st.avgShield = avgShield;
+
+  // ---- happiness ----
+  const H = cfg.happiness, hf = {};
+  hf.base = H.base;
+  hf.power = blackout ? H.blackout : 0;
+  hf.life = lifeOK ? 0 : H.noLife;
+  hf.congestion = H.congestion * cong;
+  hf.shielding = housing > 0 ? (avgShield - cfg.shield.good) * cfg.shield.happinessWeight : 0;
+  let covered = 0;
+  for (const [x, y, c] of zoneCells) if (c.zone === 1) { const w = ZONES.R.housing[zl(c)]; for (const dm of domes) if (Math.hypot(dm[0] - x - 0.5, dm[1] - y - 0.5) <= cfg.parkRadius) { covered += w; break; } }
+  hf.parks = housing > 0 ? cfg.parkHappiness * covered / housing : 0;
+  let dusty = 0;
+  for (const [x, y, c] of zoneCells) if (c.zone === 1 && dust[idx(x, y)] > 0) dusty += ZONES.R.housing[zl(c)] * Math.min(1, dust[idx(x, y)] / 3);
+  hf.dust = housing > 0 ? H.dust * dusty / housing : 0;
+  hf.landmarks = Math.min(8, lmN * 2);
+  hf.tourism = Math.min(H.tourism, tourists / 60) * (hasPort ? 1 : 0.5);
+  const avgTax = (S.tax.R + S.tax.C + S.tax.I + S.tax.T) / 4;
+  hf.taxes = -(avgTax - 9) * H.taxWeight;
+  const cov = (cap) => S.pop <= 1 ? 1 : Math.min(1, cap / S.pop);
+  hf.services = H.med * cov(med) + H.police * cov(pol) + H.fire * cov(fire) - (H.med + H.police + H.fire) * 0.5;
+  hf.unemployment = S.pop > 20 ? H.unemployment * unemp : 0;
+  let target = 0; for (const k in hf) target += hf[k];
+  target = clamp(target, 0, 100);
+  S.happiness += (target - S.happiness) * Math.min(1, H.smooth * dt);
+  if (!isFinite(S.happiness)) S.happiness = 50;
+  S.happiness = clamp(S.happiness, 0, 100);
+  if (S.happiness < 25 && S.pop > 0) S.pop = Math.max(0, S.pop - S.pop * 0.01 * dt);
+  st.hf = hf; st.hTarget = target;
+
+  // ---- money (monthly) ----
+  S.monthAcc += dt;
+  const monthLen = S.settings.cycleSeconds / cfg.monthsPerCycle;
+  if (S.monthAcc >= monthLen) { S.monthAcc -= monthLen; doMonth(st, op, cong, hasPort, tourists); }
+  HOOKS.disasters(S, dt); HOOKS.research(S, dt);
+  S.alertsPrev = S.alerts;
+}
+function doMonth(st, op, cong, hasPort, tourists) {
+  const cfg = CONFIG, dif = S.settings.difficulty, pen = 1 - cfg.congestionIncomePenalty * st.cong;
+  const tx = (S.pop * S.tax.R * cfg.taxBase.R * op + st.jobsC * op * S.tax.C * cfg.taxBase.C + st.jobsI * op * S.tax.I * cfg.taxBase.I + st.jobsT * op * S.tax.T * cfg.taxBase.T) * pen / dif;
+  const exp = hasPort && op ? st.jobsI * cfg.exportPerIndJob * pen / dif : 0;
+  const tour = op && S.happiness >= cfg.tourismMinHappiness ? tourists * cfg.touristIncome * (hasPort ? 1 : cfg.tourismNoPort) * pen : 0;
+  const port = hasPort && op ? cfg.spaceportIncome : 0;
+  const income = (tx + exp + tour + port) * cfg.incomeScale, expense = st.maintenance;
+  S.money += income - expense; S.month++;
+  const sc = cfg.incomeScale; S.last = { income, expense, net: income - expense, tax: tx * sc, exports: exp * sc, tourism: tour * sc, port: port * sc };
+  if (S.settings.monthReport) toast(T('Month') + ' ' + S.month + ': ' + T('income') + ' +' + fmt(income) + ', ' + T('upkeep') + ' -' + fmt(expense) + ', ' + T('net') + ' ' + (income - expense >= 0 ? '+' : '') + fmt(income - expense));
+  if (S.money < cfg.gameOverMoney) S.negMonths++; else S.negMonths = 0;
+  if (S.negMonths >= cfg.gameOverMonths) S.gameOver = true;
+}
+function simAdvance(realDt, speed) {
+  S.acc = (S.acc || 0) + realDt * speed;
+  let n = 0;
+  while (S.acc >= CONFIG.simStep && n < 40) { stepOnce(CONFIG.simStep); S.acc -= CONFIG.simStep; n++; }
+  if (n === 40) S.acc = 0;
+}
+
+/* ===================== Save / load ===================== */
+const SLOTS = 3;
+const slotKey = n => SAVE_KEY + '.slot' + n;
+let curSlot = 1;
+function serialize() {
+  return { v: 1, time: S.time, money: S.money, pop: S.pop, happiness: S.happiness, storage: S.storage, tax: S.tax, settings: S.settings,
+    cells: S.cells.map(c => [c.terr, c.zone, c.lvl, c.tube, +c.shield.toFixed(2), c.b, c.mega ? 2 : c.mp ? 1 : 0]),
+    buildings: S.buildings, nextId: S.nextId, monthAcc: S.monthAcc, month: S.month, negMonths: S.negMonths, last: S.last, demand: S.demand, coolRatio: S.coolRatio, gameOver: S.gameOver, lm: S.lm || 0, lmBuilt: S.lmBuilt || 0, msIdx: S.msIdx || 0 };
+}
+function saveGame() {
+  try { const o = serialize(); o.meta = { pop: Math.round(S.pop), money: Math.round(S.money), cycle: S.cycle, when: Date.now() }; localStorage.setItem(slotKey(curSlot), JSON.stringify(o)); localStorage.setItem(SAVE_KEY + '.last', String(curSlot)); return true; } catch (e) { return false; }
+}
+function applySave(o) {
+  const on = Math.round(Math.sqrt(o.cells.length)), mig = on < CONFIG.gridSize;
+  setN(mig ? CONFIG.gridSize : on);
+  newGame();
+  S.time = o.time; S.money = o.money; S.pop = o.pop; S.happiness = o.happiness; S.storage = o.storage; S.tax = o.tax; S.settings = o.settings;
+  const oc = o.cells.map(a => ({ terr: a[0], zone: a[1], lvl: a[2], tube: a[3], shield: a[4], b: a[5], conn: false, mp: a[6] === 1 ? 1 : 0, mega: a[6] === 2 ? 1 : 0 }));
+  let offX = 0;
+  if (mig) { // older, smaller city: keep it where it was relative to the polar crater, on the bigger map
+    offX = (N - on) >> 1; const nc = S.cells.map(c => { const m = mkCell(); m.terr = c.terr; return m; });
+    for (let y = 0; y < on; y++) for (let x = 0; x < on; x++) nc[y * N + x + offX] = oc[y * on + x];
+    S.cells = nc; o.buildings.forEach(b => b.x += offX);
+  } else S.cells = oc;
+  for (const c of S.cells) if (c.zone === 1 && c.lvl > 0 && c.shield < CONFIG.shield.built) c.shield = CONFIG.shield.built;
+  S.buildings = o.buildings; S.nextId = o.nextId; S.bmap = {}; for (const b of S.buildings) S.bmap[b.id] = b;
+  S.monthAcc = o.monthAcc; S.month = o.month; S.negMonths = o.negMonths; S.last = o.last; S.demand = o.demand; S.coolRatio = o.coolRatio; S.gameOver = false;
+  if (o.msIdx === undefined) { S.msIdx = MILESTONES.filter(m => S.pop >= m).length; S.lm = S.msIdx; S.lmBuilt = 0; } else { S.msIdx = o.msIdx; S.lm = o.lm; S.lmBuilt = o.lmBuilt; }
+  S.msNew = 0; S.dirty = true; terrainCache = null; stepOnce(0.001); S.gameOver = !!o.gameOver;
+}
+function loadGame(n) {
+  try {
+    n = n || +localStorage.getItem(SAVE_KEY + '.last') || 1;
+    const raw = localStorage.getItem(slotKey(n)); if (!raw) return false;
+    const o = JSON.parse(raw); if (!o || o.v !== 1) return false;
+    applySave(o); curSlot = n; return true;
+  } catch (e) { console.error(e); return false; }
+}
+function slotMeta(n) { try { const r = localStorage.getItem(slotKey(n)); if (!r) return null; const o = JSON.parse(r); return o.meta || { pop: Math.round(o.pop), money: Math.round(o.money), cycle: 1 + Math.floor(o.time / o.settings.cycleSeconds), when: 0 }; } catch (e) { return null; } }
+function hasSave() { for (let i = 1; i <= SLOTS; i++) if (slotMeta(i)) return true; return false; }
+(function migrate() { try { const old = localStorage.getItem(SAVE_KEY); if (old && !localStorage.getItem(slotKey(1))) localStorage.setItem(slotKey(1), old); } catch (e) {} })();
+
+/* ===================== Rendering ===================== */
+const canvas = document.getElementById('c'), ctx = canvas.getContext('2d');
+let DPR = 1, VW = 0, VH = 0, terrainCache = null;
+const cam = { x: 0, y: 0, zoom: 0.9 };
+const CS = 1.5, COY = 6; let COX = N * TW / 2;
+function setN(n) { if (n !== N) { N = n; COX = N * TW / 2; terrainCache = null; } }
+function P(tx, ty) { return [(tx - ty) * TW / 2, (tx + ty) * TH / 2]; }
+function resize() {
+  VW = window.innerWidth; VH = window.innerHeight;
+  DPR = Math.min(window.devicePixelRatio || 1, VW < 520 ? 1.5 : 2); // phones: fewer pixels, cooler and smoother
+  canvas.width = Math.round(VW * DPR); canvas.height = Math.round(VH * DPR);
+}
+window.addEventListener('resize', () => { resize(); wakeUntil = performance.now() + 600; });
+let wakeUntil = 0, lastRender = 0;
+for (const ev of ['pointerdown', 'pointermove', 'pointerup', 'wheel', 'keydown', 'click', 'touchstart']) window.addEventListener(ev, () => { wakeUntil = performance.now() + 600; }, { passive: true });
+const shadeCache = {};
+function shade(hex, f) {
+  const key = hex + f; if (shadeCache[key]) return shadeCache[key];
+  let r, g, b; if (hex[0] === 'r') { [r, g, b] = hex.match(/\d+/g).map(Number); } else { const n = parseInt(hex.slice(1), 16); r = (n >> 16) & 255; g = (n >> 8) & 255; b = n & 255; }
+  r = clamp(r * f | 0, 0, 255); g = clamp(g * f | 0, 0, 255); b = clamp(b * f | 0, 0, 255);
+  return shadeCache[key] = 'rgb(' + r + ',' + g + ',' + b + ')';
+}
+function poly(c, pts, fill, stroke) {
+  c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); c.closePath();
+  if (fill) { c.fillStyle = fill; c.fill(); } if (stroke) { c.strokeStyle = stroke; c.stroke(); }
+}
+function diamond(c, x, y, w, h, fill, stroke) { const A = P(x, y), B = P(x + w, y), C = P(x + w, y + h), D = P(x, y + h); poly(c, [A, B, C, D], fill, stroke); }
+function box(c, x, y, w, h, H, col, lift) {
+  lift = lift || 0;
+  const A = P(x, y), B = P(x + w, y), C = P(x + w, y + h), D = P(x, y + h);
+  const up = (p, k) => [p[0], p[1] - k];
+  if (!lift && H > 3) { // contact shadow
+    c.fillStyle = 'rgba(0,0,0,0.28)'; c.beginPath(); const o = H * 0.35;
+    c.moveTo(B[0], B[1]); c.lineTo(B[0] + o, B[1] + o * 0.5); c.lineTo(C[0] + o, C[1] + o * 0.5); c.lineTo(D[0] + o * 0.4, D[1] + o * 0.2); c.lineTo(D[0], D[1]); c.lineTo(C[0], C[1]); c.closePath(); c.fill();
+  }
+  const side = (p, q, f) => { // vertical face from ground edge p->q
+    const pts = [up(p, lift), up(q, lift), up(q, lift + H), up(p, lift + H)];
+    const g = c.createLinearGradient(0, pts[2][1], 0, pts[0][1]);
+    g.addColorStop(0, shade(col, f * 1.12)); g.addColorStop(1, shade(col, f * 0.78));
+    poly(c, pts, g);
+    c.save(); c.globalAlpha = 0.14; c.fillStyle = getPat(c); c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < 4; i++) c.lineTo(pts[i][0], pts[i][1]); c.closePath(); c.fill(); c.restore();
+    // panel seams
+    c.strokeStyle = 'rgba(0,0,0,0.20)'; c.lineWidth = 0.6; c.beginPath();
+    const nv = Math.max(2, Math.round(Math.hypot(q[0] - p[0], q[1] - p[1]) / 14));
+    for (let i = 1; i < nv; i++) { const t = i / nv; const bx = p[0] + (q[0] - p[0]) * t, by = p[1] + (q[1] - p[1]) * t; c.moveTo(bx, by - lift); c.lineTo(bx, by - lift - H); }
+    if (H > 9) { const my = H * 0.5; c.moveTo(p[0], p[1] - lift - my); c.lineTo(q[0], q[1] - lift - my); }
+    c.stroke();
+    c.strokeStyle = 'rgba(255,255,255,0.14)'; c.beginPath(); c.moveTo(pts[3][0], pts[3][1]); c.lineTo(pts[2][0], pts[2][1]); c.stroke();
+    return pts;
+  };
+  side(D, C, 0.72); side(C, B, 0.52);
+  const top = [up(A, lift + H), up(B, lift + H), up(C, lift + H), up(D, lift + H)];
+  const tg = c.createLinearGradient(top[3][0], top[3][1], top[1][0], top[1][1]);
+  tg.addColorStop(0, shade(col, 1.2)); tg.addColorStop(1, shade(col, 0.95));
+  poly(c, top, tg);
+  c.save(); c.globalAlpha = 0.16; c.fillStyle = getPat(c); c.beginPath(); c.moveTo(top[0][0], top[0][1]); for (let i = 1; i < 4; i++) c.lineTo(top[i][0], top[i][1]); c.closePath(); c.fill(); c.restore();
+  c.strokeStyle = 'rgba(255,255,255,0.28)'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(top[3][0], top[3][1]); c.lineTo(top[0][0], top[0][1]); c.lineTo(top[1][0], top[1][1]); c.stroke();
+  if (w > 0.45 && h > 0.45) { // roof detail: inset panel and a small vent
+    const m = 0.18, ia = P(x + w * m, y + h * m), ib = P(x + w * (1 - m), y + h * m), ic = P(x + w * (1 - m), y + h * (1 - m)), id = P(x + w * m, y + h * (1 - m));
+    c.strokeStyle = 'rgba(0,0,0,0.22)'; c.lineWidth = 0.7; c.beginPath(); c.moveTo(ia[0], ia[1] - lift - H); c.lineTo(ib[0], ib[1] - lift - H); c.lineTo(ic[0], ic[1] - lift - H); c.lineTo(id[0], id[1] - lift - H); c.closePath(); c.stroke();
+    if (H > 5) { const v = P(x + w * 0.62, y + h * 0.38); box2(c, v[0], v[1] - lift - H, 3.2, 3.2, shade(col, 0.6)); }
+  }
+}
+function box2(c, cx, cy, w, h, col) { c.fillStyle = col; c.fillRect(cx - w / 2, cy - h, w, h); c.fillStyle = 'rgba(255,255,255,0.3)'; c.fillRect(cx - w / 2, cy - h, w, 1); }
+const patCache = new WeakMap();
+function getPat(c) { let p = patCache.get(c.canvas); if (!p) { p = c.createPattern(noiseTex, 'repeat'); patCache.set(c.canvas, p); } return p; }
+
+/* ---- procedural textures (no external assets) ---- */
+const noiseTex = (function () {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 128; const g = cv.getContext('2d');
+  const id = g.createImageData(128, 128), r = mulberry(7);
+  for (let i = 0; i < 128 * 128; i++) { const v = 90 + r() * 120 | 0, a = 255; id.data[i * 4] = v; id.data[i * 4 + 1] = v; id.data[i * 4 + 2] = v; id.data[i * 4 + 3] = a; }
+  g.putImageData(id, 0, 0);
+  // a few soft blotches for mottling
+  for (let i = 0; i < 40; i++) { g.fillStyle = 'rgba(' + (r() < 0.5 ? '0,0,0' : '255,255,255') + ',0.06)'; g.beginPath(); g.arc(r() * 128, r() * 128, 6 + r() * 14, 0, 6.3); g.fill(); }
+  return cv;
+})();
+let noisePat = null;
+function getNoisePat(c) { return c.createPattern(noiseTex, 'repeat'); }
+function drawCrater(c, cx, cy, rx, ry, seed) {
+  const ry2 = ry;
+  let g = c.createRadialGradient(cx, cy, rx * 0.15, cx, cy, rx);
+  g.addColorStop(0, 'rgba(25,25,30,0.55)'); g.addColorStop(0.75, 'rgba(45,45,52,0.35)'); g.addColorStop(1, 'rgba(60,60,66,0)');
+  c.fillStyle = g; c.beginPath(); c.ellipse(cx, cy, rx, ry2, 0, 0, 6.3); c.fill();
+  // lit rim on the upper-left, shadow on the lower-right
+  c.lineWidth = Math.max(1, rx * 0.12);
+  c.strokeStyle = 'rgba(255,255,255,0.28)'; c.beginPath(); c.ellipse(cx, cy, rx * 0.9, ry2 * 0.9, 0, Math.PI * 0.95, Math.PI * 1.75); c.stroke();
+  c.strokeStyle = 'rgba(0,0,0,0.30)'; c.beginPath(); c.ellipse(cx, cy, rx * 0.9, ry2 * 0.9, 0, -Math.PI * 0.05, Math.PI * 0.75); c.stroke();
+}
+function buildTerrainCache() {
+  const cv = document.createElement('canvas');
+  cv.width = Math.ceil(N * TW * CS); cv.height = Math.ceil((N * TH + 20) * CS);
+  const c = cv.getContext('2d');
+  c.setTransform(CS, 0, 0, CS, COX * CS, COY * CS);
+  for (let d = 0; d <= 2 * N - 2; d++) for (let x = Math.max(0, d - N + 1); x <= Math.min(d, N - 1); x++) {
+    const y = d - x, t = cell(x, y).terr, h = hash2(x, y);
+    let base;
+    if (t === 2) { const v = 190 + h * 30; base = 'rgb(' + (v - 30 | 0) + ',' + (v - 5 | 0) + ',' + (v + 20 | 0) + ')'; }
+    else if (t === 1) { const v = 70 + h * 14; base = 'rgb(' + v + ',' + v + ',' + (v + 4) + ')'; }
+    else if (t === 3) { const v = 118 + h * 16; base = 'rgb(' + v + ',' + v + ',' + (v + 2) + ')'; }
+    else if (t === 4) { const v = 92 + h * 14; base = 'rgb(' + (v | 0) + ',' + (v | 0) + ',' + (v + 8 | 0) + ')'; }
+    else if (t === 5) { const v = 160 + h * 18; base = 'rgb(' + (v + 6 | 0) + ',' + (v + 2 | 0) + ',' + (v - 10 | 0) + ')'; }
+    else if (t === 6) { const v = 120 + h * 16; base = 'rgb(' + (v + 4 | 0) + ',' + (v | 0) + ',' + (v - 4 | 0) + ')'; }
+    else if (t === 7) { const v = 98 + h * 16; base = 'rgb(' + v + ',' + v + ',' + (v + 6) + ')'; }
+    else { const v = 128 + h * 22; base = 'rgb(' + (v | 0) + ',' + (v | 0) + ',' + (v + 4 | 0) + ')'; }
+    c.lineWidth = 0.6;
+    diamond(c, x, y, 1, 1, base, 'rgba(0,0,0,0.10)');
+    const cc = P(x + 0.5, y + 0.5);
+    if (t !== 1 && t !== 2 && t !== 7) { // rough ground: speckles and tiny scratches inside the tile
+      for (let q = 0; q < 16; q++) { const u = 0.1 + 0.8 * hash2(x * 13 + q, y * 7 + 3), v = 0.1 + 0.8 * hash2(x * 5 + 9, y * 11 + q * 3), pp = P(x + u, y + v), dark = q % 2, sz = 0.5 + hash2(q + x, y) * 1.1;
+        c.fillStyle = dark ? 'rgba(20,20,28,0.30)' : 'rgba(235,232,225,0.30)'; c.fillRect(pp[0], pp[1], sz * 1.6, sz); }
+      c.lineWidth = 0.7;
+      for (let q = 0; q < 3; q++) { const u = 0.2 + 0.6 * hash2(x + q * 17, y * 3), v = 0.2 + 0.6 * hash2(x * 3, y + q * 19), pp = P(x + u, y + v), a = hash2(q, x * y) * 6.3;
+        c.strokeStyle = q % 2 ? 'rgba(15,15,25,0.22)' : 'rgba(240,238,230,0.22)'; c.beginPath(); c.moveTo(pp[0], pp[1]); c.lineTo(pp[0] + Math.cos(a) * 4, pp[1] + Math.sin(a) * 2); c.stroke(); }
+    }
+    if (t === 7) { const ht = 18 + h * 22; c.fillStyle = 'rgba(0,0,0,0.25)'; c.beginPath(); c.ellipse(cc[0] + 8, cc[1] + 6, 30, 10, 0, 0, 6.3); c.fill();
+      c.fillStyle = 'rgb(150,148,156)'; c.beginPath(); c.moveTo(cc[0] - 30, cc[1] + 6); c.lineTo(cc[0] - 3 + h * 6, cc[1] - ht); c.lineTo(cc[0] + 2, cc[1] + 15); c.closePath(); c.fill();
+      c.fillStyle = 'rgb(88,86,98)'; c.beginPath(); c.moveTo(cc[0] - 3 + h * 6, cc[1] - ht); c.lineTo(cc[0] + 30, cc[1] + 6); c.lineTo(cc[0] + 2, cc[1] + 15); c.closePath(); c.fill();
+      c.fillStyle = 'rgba(255,255,255,0.55)'; c.beginPath(); c.moveTo(cc[0] - 3 + h * 6, cc[1] - ht); c.lineTo(cc[0] - 8 + h * 6, cc[1] - ht + 9); c.lineTo(cc[0] + 1 + h * 6, cc[1] - ht + 6); c.closePath(); c.fill(); }
+    else if (t === 6) { for (let q = 0; q < 6; q++) { const px = cc[0] + (hash2(x + q * 3, y * 5 + q) - 0.5) * 44, py = cc[1] + (hash2(x * 5 + q, y + q * 7) - 0.5) * 18, rr = 2.4 + hash2(q, x + y) * 3.2;
+        c.fillStyle = 'rgba(25,25,30,0.4)'; c.beginPath(); c.ellipse(px + 2, py + 1.5, rr * 1.1, rr * 0.6, 0, 0, 6.3); c.fill();
+        c.fillStyle = 'rgb(' + (170 - q * 6) + ',' + (165 - q * 6) + ',' + (158 - q * 5) + ')'; c.beginPath(); c.ellipse(px, py - rr * 0.3, rr, rr * 0.8, 0, 0, 6.3); c.fill();
+        c.fillStyle = 'rgba(255,255,255,0.3)'; c.beginPath(); c.ellipse(px - rr * 0.3, py - rr * 0.6, rr * 0.4, rr * 0.25, 0, 0, 6.3); c.fill(); } }
+    else if (t === 1) { drawCrater(c, cc[0], cc[1], 26, 12, h); }
+    else if ((t === 0 || t === 4 || t === 5) && h > 0.95) { drawCrater(c, cc[0] + (h * 40 - 20 | 0) * 0.4, cc[1] + 1, 4 + (h - 0.95) * 40, 2.2 + (h - 0.95) * 20, h); }
+    else if (t === 2 && h > 0.6) { c.fillStyle = 'rgba(255,255,255,0.5)'; c.fillRect(cc[0] - 6 + h * 8, cc[1] - 2, 3, 2); }
+    // pebbles
+    if (t !== 1 && t !== 7 && t !== 6 && hash2(x + 91, y + 17) > 0.55) {
+      const k = hash2(x * 3 + 5, y * 7 + 2);
+      for (let q = 0; q < 3; q++) { const px = cc[0] + (hash2(x + q, y * 5) - 0.5) * 36, py = cc[1] + (hash2(x * 5, y + q) - 0.5) * 14, rr = 1 + k * 1.8;
+        c.fillStyle = 'rgba(30,30,35,0.35)'; c.beginPath(); c.ellipse(px + 1, py + 1, rr, rr * 0.55, 0, 0, 6.3); c.fill();
+        c.fillStyle = 'rgba(190,188,184,0.6)'; c.beginPath(); c.ellipse(px, py, rr, rr * 0.55, 0, 0, 6.3); c.fill(); }
+    }
+  }
+  // grain over everything painted so far, and a few large craters spanning tiles
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.globalCompositeOperation = 'source-atop';
+  c.globalAlpha = 0.22; c.fillStyle = getNoisePat(c); c.fillRect(0, 0, cv.width, cv.height);
+  c.globalAlpha = 1;
+  c.setTransform(CS, 0, 0, CS, COX * CS, COY * CS);
+  const rr = mulberry(1234);
+  for (let i = 0; i < Math.round(3 * N * N / 1024); i++) { const tx = 2 + rr() * (N - 4), ty = 8 + rr() * (N - 10); const t0 = cell(tx | 0, ty | 0).terr; if (t0 !== 0 && t0 !== 3 && t0 !== 4 && t0 !== 5) continue; const p = P(tx, ty); drawCrater(c, p[0], p[1], 30 + rr() * 30, 14 + rr() * 14, rr()); }
+  // soft light falloff toward the map edges
+  c.globalCompositeOperation = 'source-atop';
+  const gg = c.createRadialGradient(0, N * TH / 2, N * TH * 0.2, 0, N * TH / 2, N * TW * 0.55);
+  gg.addColorStop(0, 'rgba(255,250,240,0.06)'); gg.addColorStop(1, 'rgba(0,0,10,0.22)');
+  c.fillStyle = gg; c.fillRect(-COX, -COY, cv.width / CS, cv.height / CS);
+  c.globalCompositeOperation = 'source-over';
+  terrainCache = cv;
+}
+const glows = [], capsules = [];
+function lightOn(x, y, r, col) { glows.push([x, y, r, col]); }
+
+function drawWindows(c, x, y, w, h, H, lit) { // simple window lines on the left/right faces
+  if (H < 6) return;
+  const B = P(x + w, y), C = P(x + w, y + h), D = P(x, y + h);
+  c.lineWidth = 1.5; c.strokeStyle = lit ? 'rgba(255,230,140,0.85)' : 'rgba(20,30,50,0.55)';
+  const rows = Math.min(4, Math.floor(H / 5));
+  for (let r = 0; r < rows; r++) {
+    const yy = 3 + r * 5;
+    c.beginPath(); c.moveTo(D[0] + (C[0] - D[0]) * 0.15, D[1] + (C[1] - D[1]) * 0.15 - yy); c.lineTo(D[0] + (C[0] - D[0]) * 0.85, D[1] + (C[1] - D[1]) * 0.85 - yy); c.stroke();
+    c.beginPath(); c.moveTo(C[0] + (B[0] - C[0]) * 0.15, C[1] + (B[1] - C[1]) * 0.15 - yy); c.lineTo(C[0] + (B[0] - C[0]) * 0.85, C[1] + (B[1] - C[1]) * 0.85 - yy); c.stroke();
+  }
+  if (lit) { const m = P(x + w / 2, y + h / 2); lightOn(m[0], m[1] - H * 0.6, 12 + H, 'rgba(255,220,120,0.5)'); }
+}
+function regolithMound(c, x, y, w, h) {
+  const e = 0.18;
+  diamond(c, x - e, y - e, w + 2 * e, h + 2 * e, '#8d8a86', null);
+  const A = P(x - e, y - e), B = P(x + w + e, y - e), C = P(x + w + e, y + h + e), D = P(x - e, y + h + e);
+  poly(c, [D, C, [C[0], C[1] - 3], [D[0], D[1] - 3]], '#75726e'); poly(c, [C, B, [B[0], B[1] - 3], [C[0], C[1] - 3]], '#615f5c');
+  poly(c, [[A[0], A[1] - 3], [B[0], B[1] - 3], [C[0], C[1] - 3], [D[0], D[1] - 3]], '#a29e98');
+}
+
+/* ---- procedural building looks: several variants per zone and level, picked per tile ---- */
+const Bx = (px, py, w, h, H, lift, f, win) => ({ t: 'b', px, py, w, h, H, lift: lift || 0, f: f || 1, win });
+const Cy = (cx, cy, r, H, lift, f, win) => ({ t: 'c', cx, cy, r, H, lift: lift || 0, f: f || 1, win });
+const Pd = (cx, cy, r, H, lift, f) => ({ t: 'p', cx, cy, r, H, lift: lift || 0, f: f || 1 });
+const Gl = (cx, cy, r, H, lift) => ({ t: 'g', cx, cy, r, H, lift: lift || 0 });
+const An = (cx, cy, H, lift) => ({ t: 'a', cx, cy, H, lift: lift || 0 });
+const LOOKS = {
+  R: [
+    [[Pd(.5, .5, .30, 5)], [Pd(.3, .35, .2, 4), Pd(.7, .65, .22, 4.5)], [Bx(.15, .15, .7, .7, 4), Bx(.22, .22, .45, .45, 1, 4, .55)], [Pd(.4, .4, .26, 5), Bx(.6, .6, .3, .3, 3, 0, .9)]],
+    [[Bx(.14, .14, .72, .72, 9, 0, 1, 1)], [Cy(.5, .5, .30, 11, 0, 1, 1)], [Bx(.12, .12, .45, .75, 12, 0, 1, 1), Bx(.55, .3, .35, .5, 6, 0, .9)], [Bx(.12, .12, .76, .76, 6), Bx(.25, .25, .5, .5, 5, 6, 1.1, 1)]],
+    [[Bx(.16, .16, .68, .68, 17, 0, 1, 1), An(.5, .5, 7, 17)], [Bx(.1, .1, .38, .5, 17, 0, 1, 1), Bx(.5, .4, .38, .5, 13, 0, .95, 1)], [Cy(.5, .5, .34, 18, 0, 1, 1)], [Bx(.1, .1, .8, .8, 8), Bx(.2, .2, .6, .6, 7, 8, 1.05, 1), Bx(.32, .32, .36, .36, 5, 15, 1.1), An(.5, .5, 5, 20)]],
+    [[Bx(.15, .15, 1.7, 1.7, 6, 0, .9), Bx(.25, .25, .7, .7, 26, 6, 1, 1), Bx(1.05, 1, .7, .7, 20, 6, 1.05, 1), An(.6, .6, 9, 32)], [Bx(.2, .2, .55, 1.6, 22, 0, 1, 1), Bx(.85, .2, .55, 1.6, 28, 0, 1.05, 1), Bx(1.5, .2, .35, 1.6, 18, 0, .95, 1)], [Cy(1, 1, .8, 26, 0, 1, 1), Cy(1, 1, .5, 10, 26, 1.1)], [Bx(.15, .15, 1.7, 1.7, 14, 0, 1, 1), Bx(.35, .35, 1.3, 1.3, 8, 14, 1.1, 1), Gl(1, 1, .5, 8, 22), An(1, 1, 8, 30)]]
+  ],
+  C: [
+    [[Bx(.12, .12, .76, .76, 5, 0, 1, 1), Bx(.12, .62, .76, .1, 1.5, 3, 1.6)], [Bx(.15, .15, .7, .7, 4), Gl(.5, .5, .3, 5, 4)], [Bx(.1, .25, .8, .5, 4, 0, 1, 1)], [Bx(.12, .12, .5, .76, 5, 0, 1, 1), Cy(.78, .5, .14, 7, 0, .8)]],
+    [[Bx(.12, .12, .76, .76, 9, 0, 1, 1)], [Bx(.1, .1, .38, .8, 9, 0, 1, 1), Bx(.52, .1, .38, .8, 7, 0, .95, 1)], [Bx(.12, .12, .76, .76, 7, 0, 1, 1), Gl(.5, .5, .28, 5, 7)], [Cy(.5, .5, .34, 8, 0, 1, 1)]],
+    [[Bx(.12, .12, .76, .76, 13, 0, 1, 1), Bx(.25, .25, .5, .5, 7, 13, 1.1, 1)], [Bx(.2, .1, .5, .8, 19, 0, 1, 1)], [Bx(.08, .08, .84, .84, 5, 0, .9), Bx(.25, .25, .5, .5, 16, 5, 1, 1), An(.5, .5, 5, 21)], [Cy(.5, .5, .3, 19, 0, 1, 1), Bx(.1, .1, .8, .8, 3, 0, .8)]],
+    [[Bx(.15, .15, 1.7, 1.7, 8, 0, .95, 1), Bx(.3, .3, .8, .8, 28, 8, 1, 1), Bx(1.1, 1.1, .6, .6, 18, 8, 1.05, 1)], [Bx(.1, .1, 1.8, 1.8, 9, 0, 1, 1), Gl(1, 1, .7, 10, 9)], [Bx(.15, .15, .75, 1.7, 30, 0, 1, 1), Bx(1.1, .15, .75, 1.7, 24, 0, 1, 1), Bx(.9, .3, .2, 1.2, 4, 14, .7)], [Cy(1, 1, .75, 20, 0, 1, 1), Cy(1, 1, .45, 10, 20, 1.1), An(1, 1, 6, 30)]]
+  ],
+  I: [
+    [[Bx(.1, .15, .8, .6, 5), Cy(.78, .3, .08, 12, 0, .6)], [Cy(.35, .5, .26, 6), Cy(.72, .55, .18, 4, 0, .9)], [Bx(.1, .15, .8, .7, 4), Bx(.1, .15, .8, .2, 2.5, 4, 1.2), Bx(.1, .5, .8, .2, 2.5, 4, 1.1)], [Bx(.2, .2, .6, .6, 3), Cy(.5, .5, .2, 9, 3, .8)]],
+    [[Bx(.08, .1, .6, .8, 8, 0, 1, 1), Cy(.8, .3, .09, 15, 0, .6), Cy(.8, .6, .09, 12, 0, .6)], [Cy(.3, .35, .24, 9), Cy(.7, .35, .2, 7, 0, .95), Bx(.15, .65, .7, .25, 4, 0, .9)], [Bx(.08, .1, .84, .8, 6), Bx(.15, .15, .3, .7, 3, 6, 1.2), Bx(.55, .15, .3, .7, 3, 6, 1.1)], [Bx(.1, .1, .5, .8, 10, 0, 1, 1), Bx(.65, .2, .25, .6, 5, 0, .9), An(.3, .5, 6, 10)]],
+    [[Bx(.08, .1, .84, .8, 10, 0, 1, 1), Bx(.2, .2, .2, .6, 4, 10, .6), Bx(.6, .2, .2, .6, 4, 10, .6), Cy(.9, .2, .06, 17, 0, .6)], [Bx(.1, .1, .8, .8, 6), Bx(.1, .1, .1, .8, 12, 0, .7), Bx(.8, .1, .1, .8, 12, 0, .7), Bx(.1, .4, .8, .15, 2, 12, .8)], [Cy(.3, .3, .22, 12), Cy(.7, .3, .22, 14), Bx(.1, .6, .8, .3, 7, 0, .9, 1)], [Bx(.1, .1, .8, .8, 13, 0, 1, 1), Cy(.8, .2, .07, 20, 0, .6)]],
+    [[Bx(.1, .1, 1.8, 1.1, 11, 0, 1, 1), Cy(.4, 1.55, .22, 16, 0, .8), Cy(1, 1.55, .22, 14, 0, .8), Cy(1.6, 1.55, .22, 18, 0, .8), Cy(1.7, .3, .1, 26, 11, .6)], [Bx(.1, .1, .9, 1.8, 14, 0, 1, 1), Bx(1.1, .1, .8, .8, 8, 0, .9), Cy(1.5, 1.5, .35, 12), Cy(1.5, 1.5, .15, 20, 12, .7)], [Bx(.1, .1, 1.8, 1.8, 7), Bx(.2, .2, .6, 1.6, 5, 7, 1.2), Bx(1, .2, .6, 1.6, 5, 7, 1.1), Bx(1.4, .2, .4, .4, 20, 0, .7)], [Bx(.1, .1, 1.8, 1.8, 10, 0, 1, 1), Bx(.1, .1, .2, 1.8, 18, 0, .7), Bx(1.7, .1, .2, 1.8, 18, 0, .7), Bx(.1, .85, 1.8, .3, 3, 18, .8)]]
+  ],
+  T: [
+    [[Bx(.2, .2, .6, .6, 4), Gl(.5, .5, .42, 8)], [Bx(.15, .15, .7, .7, 3), Gl(.35, .5, .25, 6), Gl(.7, .5, .22, 5)], [Cy(.5, .5, .24, 5), Gl(.5, .5, .44, 9)], [Bx(.1, .3, .8, .4, 5, 0, 1, 1), Gl(.5, .5, .4, 7)]],
+    [[Bx(.15, .15, .7, .7, 9, 0, 1, 1), Gl(.5, .5, .46, 12)], [Bx(.1, .1, .38, .8, 10, 0, 1, 1), Bx(.52, .1, .38, .8, 8, 0, .95, 1), Gl(.5, .5, .48, 13)], [Cy(.5, .5, .3, 10, 0, 1, 1), Gl(.5, .5, .46, 14)], [Bx(.1, .1, .8, .8, 6), Bx(.25, .25, .5, .5, 6, 6, 1.1, 1), Gl(.5, .5, .48, 14)]],
+    [[Cy(.5, .5, .4, 8), Gl(.5, .5, .46, 14)], [Bx(.1, .1, .8, .8, 12, 0, 1, 1), Gl(.5, .5, .48, 16)], [Cy(.5, .5, .32, 14, 0, 1, 1), Gl(.5, .5, .46, 16)], [Cy(.3, .5, .24, 10, 0, 1, 1), Cy(.7, .5, .24, 12, 0, 1, 1), Gl(.5, .5, .48, 16)]],
+    [[Bx(.3, .3, 1.4, 1.4, 8, 0, 1, 1), Gl(1, 1, .95, 16)], [Cy(1, 1, .6, 12, 0, 1, 1), Gl(1, 1, .95, 20)], [Bx(.1, .1, .8, 1.8, 10, 0, 1, 1), Bx(1.1, .1, .8, 1.8, 14, 0, 1, 1), Gl(1, 1, .98, 18)], [Bx(.2, .2, 1.6, 1.6, 6), Cy(1, 1, .5, 14, 6, 1.1, 1), Gl(1, 1, .95, 22)]]
+  ]
+};
+function cylPrim(c, sx, sy, r, H, col) {
+  const rx = r * TW, ry = rx * 0.5;
+  const g = c.createLinearGradient(sx - rx, 0, sx + rx, 0);
+  g.addColorStop(0, shade(col, 1.05)); g.addColorStop(0.45, shade(col, 0.95)); g.addColorStop(1, shade(col, 0.5));
+  c.fillStyle = g; c.beginPath(); c.moveTo(sx - rx, sy); c.lineTo(sx - rx, sy - H); c.ellipse(sx, sy - H, rx, ry, 0, Math.PI, 0, true); c.lineTo(sx + rx, sy); c.ellipse(sx, sy, rx, ry, 0, 0, Math.PI); c.closePath(); c.fill();
+  c.strokeStyle = 'rgba(0,0,0,0.18)'; c.lineWidth = 0.6;
+  for (let k = 1; k < Math.max(2, H / 5 | 0); k++) { c.beginPath(); c.ellipse(sx, sy - k * 5, rx, ry, 0, 0, Math.PI); c.stroke(); }
+  c.fillStyle = shade(col, 1.25); c.beginPath(); c.ellipse(sx, sy - H, rx, ry, 0, 0, 6.3); c.fill();
+  c.strokeStyle = 'rgba(255,255,255,0.25)'; c.stroke();
+}
+function drawLook(c, prims, x0, y0, col, lit) {
+  const key = p => (p.t === 'b' ? p.px + p.w / 2 + p.py + p.h / 2 : p.cx + p.cy) * 10 + p.lift * 0.01;
+  const list = prims.slice().sort((a, b) => key(a) - key(b));
+  let top = 0;
+  for (const p of list) {
+    top = Math.max(top, (p.H || 0) + p.lift);
+    if (p.t === 'b') {
+      box(c, x0 + p.px, y0 + p.py, p.w, p.h, p.H, shade(col, p.f), p.lift);
+      if (p.win && p.H >= 6 && LOD > 0) { c.save(); c.translate(0, -p.lift); drawWindows(c, x0 + p.px, y0 + p.py, p.w, p.h, p.H, lit); c.restore(); }
+    } else if (p.t === 'c') {
+      const s = P(x0 + p.cx, y0 + p.cy); cylPrim(c, s[0], s[1] - p.lift, p.r, p.H, shade(col, p.f));
+      if (p.win && lit) { const m = P(x0 + p.cx, y0 + p.cy); lightOn(m[0], m[1] - p.lift - p.H * 0.5, 6 + p.H * 0.35, 'rgba(255,220,120,0.32)'); }
+    } else if (p.t === 'p') {
+      const s = P(x0 + p.cx, y0 + p.cy), rx = p.r * TW * 1.05, sy = s[1] - p.lift;
+      c.fillStyle = shade(col, 0.7); c.beginPath(); c.ellipse(s[0], sy, rx, rx / 2, 0, 0, 6.3); c.fill();
+      const rg = c.createRadialGradient(s[0] - rx * 0.3, sy - p.H * 1.6, 2, s[0], sy - p.H * 0.6, rx * 1.1); rg.addColorStop(0, shade(col, 1.4)); rg.addColorStop(1, shade(col, 0.75));
+      c.fillStyle = rg; c.beginPath(); c.ellipse(s[0], sy - 1, rx, p.H * 1.9, 0, Math.PI, 6.3); c.lineTo(s[0] + rx, sy - 1); c.ellipse(s[0], sy - 1, rx, rx / 2, 0, 0, Math.PI); c.closePath(); c.fill();
+      c.fillStyle = 'rgba(40,50,70,0.7)'; c.fillRect(s[0] - 3, sy - p.H * 0.9, 6, 3);
+      if (lit) lightOn(s[0], sy - 6, 8, 'rgba(255,220,120,0.35)');
+    } else if (p.t === 'g') {
+      const s = P(x0 + p.cx, y0 + p.cy), rx = p.r * TW, sy = s[1] - p.lift;
+      c.fillStyle = 'rgba(170,225,255,0.20)'; c.strokeStyle = 'rgba(210,240,255,0.75)'; c.lineWidth = 1;
+      c.beginPath(); c.ellipse(s[0], sy - p.H * 0.35, rx, rx * 0.5 + p.H * 0.8, 0, 0, 6.3); c.fill(); c.stroke();
+      c.strokeStyle = 'rgba(210,240,255,0.35)'; c.beginPath(); c.ellipse(s[0], sy - p.H * 0.35, rx * 0.5, rx * 0.5 + p.H * 0.8, 0, 0, 6.3); c.stroke();
+    } else if (p.t === 'a') {
+      if (LOD === 0) continue;
+      const s = P(x0 + p.cx, y0 + p.cy); c.strokeStyle = '#8a8f9a'; c.lineWidth = 1; c.beginPath(); c.moveTo(s[0], s[1] - p.lift); c.lineTo(s[0], s[1] - p.lift - p.H); c.stroke();
+      c.fillStyle = (performance.now() / 600 | 0) % 2 ? '#ff5a5a' : '#802020'; c.fillRect(s[0] - 1, s[1] - p.lift - p.H - 1, 2, 2);
+    }
+  }
+  return top;
+}
+function drawZoneBuilding(c, x, y, cl, now, night) {
+  const k = ZK[cl.zone], z = ZONES[k], mega = !!cl.mega, L = mega ? 3 : cl.lvl - 1;
+  const x0 = mega ? x - 1 : x, y0 = mega ? y - 1 : y, sz = mega ? 2 : 1;
+  const active = S.stats.op && cl.conn;
+  const hv = hash2(x * 7 + 3, y * 13 + 1), v = Math.floor(hv * 4) % 4;
+  const col = shade(z.bcol[L], 0.92 + hash2(x + 5, y * 3) * 0.2);
+  if (cl.shield >= CONFIG.shield.regolith) regolithMound(c, x0, y0, sz, sz);
+  const top = drawLook(c, LOOKS[k][L][v], x0, y0, col, active && night);
+  if (!active) { const m0 = P(x0 + sz / 2, y0 + sz / 2); c.fillStyle = '#ff5a5a'; c.beginPath(); c.arc(m0[0], m0[1] - top - 8, 3.5, 0, 6.3); c.fill(); }
+  if (active && k === 'I' && L >= 1 && LOD > 0) {
+    const sm = P(x0 + 0.8 * sz, y0 + 0.3 * sz), np = LOD === 2 ? 4 : 2;
+    for (let q = 0; q < np; q++) { const ph = ((now / 2800 + q / np + hash2(x, y)) % 1), rr = (2.5 + ph * 7) * (sz > 1 ? 1.4 : 1);
+      c.fillStyle = 'rgba(205,205,210,' + (0.34 * (1 - ph)) + ')'; c.beginPath(); c.arc(sm[0] + Math.sin(now / 900 + q * 2 + x) * 3 + ph * 7, sm[1] - top - 4 - ph * 30 * sz, rr, 0, 6.3); c.fill(); }
+    if (night) lightOn(sm[0], sm[1] - top - 4, 9, 'rgba(255,150,70,0.35)');
+  }
+}
+function landmarkPrims(k, w, h) {
+  const B = Bx, C = Cy;
+  switch (k) {
+    case 'statue': return [B(.15, .15, 1.7, 1.7, 3, 0, .9), B(.6, .6, .8, .8, 9, 3, 1.1), C(1, 1, .22, 14, 12, 1.15), Pd(1, 1, .2, 6, 26, 1.3), An(1, 1, 8, 34)];
+    case 'obs': return [B(.15, .15, 2.7, 2.7, 4, 0, .95), C(1.5, 1.5, 1.0, 10, 4, 1.05), Pd(1.5, 1.5, .95, 9, 14, 1.25), B(1.35, .3, .3, .5, 3, 14, .7), An(2.4, 2.4, 10, 4)];
+    case 'flag': return [B(.1, .1, 1.8, 1.8, 2, 0, 1.1), B(.45, .45, 1.1, 1.1, 2, 2, 1.2), An(1, 1, 26, 4), B(1.05, .95, .6, .06, 5, 24, 1.4)];
+    case 'tower': return [B(.25, .25, 1.5, 1.5, 4, 0, .9), C(1, 1, .3, 36, 4, 1), Pd(1, 1, .6, 9, 40, 1.2), C(1, 1, .45, 3, 40, .8), An(1, 1, 14, 50)];
+    case 'garden': return [B(.1, .1, 2.8, 2.8, 3, 0, .8), Pd(.8, .9, .25, 5, 3, .7), Pd(2.2, 2, .3, 6, 3, .8), Pd(1.5, 2.3, .22, 4, 3, .6), Gl(1.5, 1.5, 1.35, 16, 3)];
+    case 'arch': { const lw = w >= h; return lw ? [B(.15, .4, .6, h - .8, 22, 0, 1), B(w - .75, .4, .6, h - .8, 22, 0, 1), B(.15, .4, w - .3, h - .8, 5, 22, 1.15)] : [B(.4, .15, w - .8, .6, 22, 0, 1), B(.4, h - .75, w - .8, .6, 22, 0, 1), B(.4, .15, w - .8, h - .3, 5, 22, 1.15)]; }
+  }
+  return [];
+}
+function figures(c, cx, cy, rx, now, seed, n) { // tiny walking residents
+  for (let i = 0; i < n; i++) {
+    const sp = 0.00018 + hash2(seed, i) * 0.00014, a = now * sp * (i % 2 ? 1 : -1) + i * 2.1 + seed;
+    const px = cx + Math.cos(a) * rx * (0.6 + 0.4 * hash2(i, seed)), py = cy + Math.sin(a) * rx * 0.5 * (0.6 + 0.4 * hash2(i, seed));
+    c.fillStyle = 'rgba(0,0,0,0.25)'; c.beginPath(); c.ellipse(px, py + 0.5, 2, 0.9, 0, 0, 6.3); c.fill();
+    c.fillStyle = ['#f4f4f8', '#ffd27a', '#9fe3ff', '#ffb0c8'][i % 4]; c.fillRect(px - 1, py - 4.5, 2, 4);
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(px, py - 5.4, 1.2, 0, 6.3); c.fill();
+  }
+}
+function drawPlaced(c, b, now, night) {
+  const d = DEFS[b.def], x = b.x, y = b.y, w = d.w, h = d.h;
+  const ok = (!d.needsTube || b.conn);
+  const active = ok && S.stats.op;
+  const mid = P(x + w / 2, y + h / 2);
+  if (LOD > 0 && (d.kind === 'dome' || d.landmark)) figures(c, mid[0], mid[1] + 2, w * TW * 0.2, now, b.id, LOD === 2 ? 5 : 3);
+  if (b.shield >= CONFIG.shield.regolith && d.kind !== 'dome') regolithMound(c, x, y, w, h);
+  switch (d.kind) {
+    case 'landmark': { const top = drawLook(c, landmarkPrims(b.def.replace(/_r$/, ''), w, h), x, y, d.color, active && night); break; }
+    case 'solar': {
+      diamond(c, x + 0.05, y + 0.05, w - 0.1, h - 0.1, '#1d3a78', '#9ec0ff');
+      c.strokeStyle = 'rgba(160,200,255,0.7)'; c.lineWidth = 0.8;
+      for (let i = 1; i < w * 2; i++) { const a = P(x + i / 2, y), bb = P(x + i / 2, y + h); c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(bb[0], bb[1]); c.stroke(); }
+      for (let i = 1; i < h * 2; i++) { const a = P(x, y + i / 2), bb = P(x + w, y + i / 2); c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(bb[0], bb[1]); c.stroke(); }
+      if (S.light > 0.05) { c.fillStyle = 'rgba(255,255,255,' + (0.25 * S.light) + ')'; diamond(c, x + 0.05, y + 0.05, w - 0.1, h - 0.1, c.fillStyle, null); }
+      break; }
+    case 'nuclear': {
+      box(c, x + 0.2, y + 0.2, w - 0.4, 1.2, 8, '#8d93a6');
+      const t = P(x + 1.5, y + 1.9);
+      c.fillStyle = shade('#c8c8d4', 0.8); c.beginPath(); c.moveTo(t[0] - 15, t[1]); c.lineTo(t[0] - 9, t[1] - 28); c.lineTo(t[0] + 9, t[1] - 28); c.lineTo(t[0] + 15, t[1]); c.ellipse(t[0], t[1], 15, 6, 0, 0, Math.PI); c.fill();
+      c.fillStyle = '#e4e4ee'; c.beginPath(); c.ellipse(t[0], t[1] - 28, 9, 3.5, 0, 0, 6.3); c.fill();
+      c.fillStyle = '#ffe14a'; c.fillRect(mid[0] - 4, mid[1] - 6, 8, 8);
+      c.fillStyle = '#222'; c.fillRect(mid[0] - 1, mid[1] - 4, 2, 4);
+      if (active && night) lightOn(mid[0], mid[1] - 10, 30, 'rgba(120,255,160,0.45)');
+      break; }
+    case 'battery': {
+      box(c, x + 0.12, y + 0.1, w - 0.24, h - 0.2, d.height, d.color);
+      const f = S.stats.battCap > 0 ? S.storage / S.stats.battCap : 0;
+      c.fillStyle = '#0b2a1a'; c.fillRect(mid[0] - 6, mid[1] - d.height - 6, 12, 4);
+      c.fillStyle = f > 0.3 ? '#7dffb0' : '#ff6b6b'; c.fillRect(mid[0] - 6, mid[1] - d.height - 6, 12 * f, 4);
+      break; }
+    case 'ice': {
+      box(c, x + 0.15, y + 0.15, w - 0.3, h - 0.3, 5, '#8aa6c0');
+      const t = P(x + 1, y + 1);
+      c.strokeStyle = '#d9e6f2'; c.lineWidth = 2.5; c.beginPath(); c.moveTo(t[0] - 7, t[1] - 5); c.lineTo(t[0], t[1] - 30); c.lineTo(t[0] + 7, t[1] - 5); c.stroke();
+      c.beginPath(); c.moveTo(t[0] - 4, t[1] - 18); c.lineTo(t[0] + 4, t[1] - 18); c.stroke();
+      c.fillStyle = '#9fe0ff'; c.beginPath(); c.arc(t[0], t[1] - 31, 3, 0, 6.3); c.fill();
+      if (!ok) { c.fillStyle = '#ff5a5a'; c.beginPath(); c.arc(t[0], t[1] - 40, 3.5, 0, 6.3); c.fill(); }
+      if (active && night) lightOn(t[0], t[1] - 20, 22, 'rgba(160,230,255,0.5)');
+      break; }
+    case 'plant': {
+      box(c, x + 0.12, y + 0.12, w - 0.24, h - 0.24, 7, '#5b96b5');
+      const t1 = P(x + 0.7, y + 0.7), t2 = P(x + 1.4, y + 1.3);
+      for (const t of [t1, t2]) { c.fillStyle = '#d6e4ee'; c.fillRect(t[0] - 5, t[1] - 18, 10, 12); c.beginPath(); c.ellipse(t[0], t[1] - 18, 5, 2, 0, 0, 6.3); c.fill(); }
+      if (!ok) { c.fillStyle = '#ff5a5a'; c.beginPath(); c.arc(mid[0], mid[1] - 28, 3.5, 0, 6.3); c.fill(); }
+      if (active && night) lightOn(mid[0], mid[1] - 10, 22, 'rgba(150,220,255,0.5)');
+      break; }
+    case 'dome': {
+      diamond(c, x, y, w, h, '#3d6b45', 'rgba(255,255,255,0.25)');
+      const rx = (w + h) * TW / 4 * 0.98, ry = (w + h) * TH / 4 * 0.98, Hd = rx * 0.62;
+      // trees
+      for (let i = 0; i < w * h * 1.6; i++) {
+        const hx = hash2(b.x * 7 + i, b.y * 3 + i * 5), hy = hash2(b.y * 11 + i * 3, b.x + i * 7);
+        const p = P(x + 0.35 + hx * (w - 0.7), y + 0.35 + hy * (h - 0.7));
+        c.fillStyle = '#6b4a2b'; c.fillRect(p[0] - 1, p[1] - 5, 2, 5);
+        c.fillStyle = shade('#3fae5a', 0.8 + hash2(i, 3) * 0.4); c.beginPath(); c.arc(p[0], p[1] - 8, 4.2, 0, 6.3); c.fill();
+      }
+      const lit = active && night;
+      c.fillStyle = lit ? 'rgba(255,240,170,0.22)' : 'rgba(170,225,255,0.22)'; c.strokeStyle = 'rgba(215,242,255,0.8)'; c.lineWidth = 1.2;
+      c.beginPath(); c.ellipse(mid[0], mid[1], rx, ry, 0, 0, Math.PI * 2); c.stroke();
+      c.beginPath(); c.ellipse(mid[0], mid[1] - 2, rx, ry + Hd * 0.9, 0, Math.PI, Math.PI * 2); c.lineTo(mid[0] + rx, mid[1]); c.ellipse(mid[0], mid[1], rx, ry, 0, 0, Math.PI); c.closePath(); c.fill(); c.stroke();
+      c.strokeStyle = 'rgba(215,242,255,0.35)'; c.lineWidth = 0.8;
+      c.beginPath(); c.ellipse(mid[0], mid[1], rx * 0.5, ry + Hd * 0.9, 0, Math.PI, Math.PI * 2); c.stroke();
+      if (lit) lightOn(mid[0], mid[1] - Hd * 0.3, rx * 0.9, 'rgba(255,240,170,0.35)');
+      if (!ok) { c.fillStyle = '#ff5a5a'; c.beginPath(); c.arc(mid[0], mid[1] - Hd - 6, 4, 0, 6.3); c.fill(); }
+      break; }
+    case 'civic': {
+      box(c, x + 0.1, y + 0.1, w - 0.2, h - 0.2, d.height, d.color);
+      c.fillStyle = d.accent; c.fillRect(mid[0] - 1.5, mid[1] - d.height - 9, 3, 9); c.fillRect(mid[0] - 4.5, mid[1] - d.height - 6, 9, 3);
+      drawWindows(c, x + 0.1, y + 0.1, w - 0.2, h - 0.2, d.height, active && night);
+      if (!active) { c.fillStyle = '#ff5a5a'; c.beginPath(); c.arc(mid[0], mid[1] - d.height - 14, 3.5, 0, 6.3); c.fill(); }
+      break; }
+    case 'spaceport': {
+      diamond(c, x, y, w, h, '#6d7587', '#c3c9d6');
+      diamond(c, x + 0.5, y + 0.5, w - 1, h - 1, '#585f70', '#ffd54a');
+      const t = P(x + 1.3, y + 1.3);
+      c.fillStyle = '#eef2f8'; c.beginPath(); c.moveTo(t[0], t[1] - 44); c.lineTo(t[0] + 6, t[1] - 28); c.lineTo(t[0] + 6, t[1] - 4); c.lineTo(t[0] - 6, t[1] - 4); c.lineTo(t[0] - 6, t[1] - 28); c.closePath(); c.fill();
+      c.fillStyle = '#ff5a5a'; c.beginPath(); c.moveTo(t[0] - 6, t[1] - 10); c.lineTo(t[0] - 12, t[1] - 2); c.lineTo(t[0] - 6, t[1] - 4); c.fill(); c.beginPath(); c.moveTo(t[0] + 6, t[1] - 10); c.lineTo(t[0] + 12, t[1] - 2); c.lineTo(t[0] + 6, t[1] - 4); c.fill();
+      box(c, x + 2.6, y + 2.4, 1.1, 1.1, 6, '#9aa6bd');
+      if (active && night) { lightOn(t[0], t[1] - 30, 26, 'rgba(255,255,255,0.4)'); lightOn(mid[0], mid[1], 40, 'rgba(255,213,74,0.25)'); }
+      if (!ok) { c.fillStyle = '#ff5a5a'; c.beginPath(); c.arc(mid[0], mid[1] - 52, 4, 0, 6.3); c.fill(); }
+      break; }
+    case 'hub': {
+      diamond(c, x, y, w, h, '#58606f', '#b7c3d6');
+      box(c, x + 0.3, y + 0.3, 1.6, 1.6, 9, '#aebdd0');
+      const t = P(x + 2.0, y + 2.0);
+      c.fillStyle = 'rgba(190,230,255,0.45)'; c.strokeStyle = '#d9f0ff'; c.beginPath(); c.ellipse(t[0], t[1], 22, 11, 0, 0, 6.3); c.fill(); c.stroke();
+      c.beginPath(); c.ellipse(t[0], t[1] - 2, 22, 20, 0, Math.PI, 6.3); c.fill(); c.stroke();
+      c.strokeStyle = '#ddd'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(mid[0] - 10, mid[1] - 8); c.lineTo(mid[0] - 10, mid[1] - 32); c.stroke();
+      c.fillStyle = '#4aa3ff'; c.fillRect(mid[0] - 10, mid[1] - 32, 11, 7);
+      if (night && S.stats.op) lightOn(t[0], t[1] - 10, 40, 'rgba(255,230,150,0.4)');
+      break; }
+    default: box(c, x + 0.1, y + 0.1, w - 0.2, h - 0.2, d.height, d.color);
+  }
+}
+function drawTube(c, x, y, cl) {
+  const ctr = P(x + 0.5, y + 0.5), lift = 5, conn = S.connT && S.connT[idx(x, y)];
+  const nb = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => (inb(x + dx, y + dy) && cell(x + dx, y + dy).tube) ? [dx, dy] : null).filter(Boolean);
+  const main = cl.tube !== 1, wd = main ? 12 : 8;
+  const segs = nb.map(([dx, dy]) => { const e = P(x + 0.5 + dx * 0.5, y + 0.5 + dy * 0.5); return e; });
+  c.lineCap = 'round';
+  c.strokeStyle = 'rgba(0,0,0,0.28)'; c.lineWidth = wd; // shadow
+  c.beginPath(); c.moveTo(ctr[0], ctr[1] + 1); c.lineTo(ctr[0], ctr[1] + 1); for (const e of segs) { c.moveTo(ctr[0], ctr[1] + 1); c.lineTo(e[0], e[1] + 1); } c.stroke();
+  c.strokeStyle = main ? '#aebfd6' : '#8b98a9'; c.lineWidth = wd;
+  c.beginPath(); c.moveTo(ctr[0], ctr[1] - lift); c.lineTo(ctr[0], ctr[1] - lift); for (const e of segs) { c.moveTo(ctr[0], ctr[1] - lift); c.lineTo(e[0], e[1] - lift); } c.stroke();
+  c.strokeStyle = main ? '#eaf3ff' : '#bcc7d6'; c.lineWidth = wd * 0.35;
+  c.beginPath(); c.moveTo(ctr[0], ctr[1] - lift - wd * 0.15); c.lineTo(ctr[0], ctr[1] - lift - wd * 0.15); for (const e of segs) { c.moveTo(ctr[0], ctr[1] - lift - wd * 0.15); c.lineTo(e[0], e[1] - lift - wd * 0.15); } c.stroke();
+  if (main) { c.strokeStyle = conn ? '#4aa3ff' : '#ff6b6b'; c.lineWidth = 1.5; c.beginPath(); for (const e of segs) { c.moveTo(ctr[0], ctr[1] - lift + wd * 0.15); c.lineTo(e[0], e[1] - lift + wd * 0.15); } c.stroke(); }
+  if (!conn) { c.fillStyle = '#ff6b6b'; c.beginPath(); c.arc(ctr[0], ctr[1] - lift - 9, 2.5, 0, 6.3); c.fill(); }
+  if (cl.tube === 3) { box(c, x + 0.25, y + 0.25, 0.5, 0.5, 9, '#c7d6ea', 3); c.fillStyle = '#4aa3ff'; c.fillRect(ctr[0] - 3, ctr[1] - 19, 6, 3); }
+}
+function updateCapsules(dt) {
+  if (!S || !S.tubeList) return;
+  const want = S.tubeList.length ? Math.min(CONFIG.capsuleMax, Math.round((S.stats.trips || 0) / 6) + 3) : 0;
+  while (capsules.length < want) { const t = S.tubeList[Math.random() * S.tubeList.length | 0]; capsules.push({ ax: t[0], ay: t[1], bx: t[0], by: t[1], u: 1, col: Math.random() < 0.5 ? '#ffe28a' : '#8ae6ff' }); }
+  if (capsules.length > want) capsules.length = want;
+  const sp = S.paused ? 0 : 1;
+  for (const cp of capsules) {
+    const bt = inb(cp.bx, cp.by) ? cell(cp.bx, cp.by).tube : 0;
+    cp.u += dt * (bt === 1 ? 2.2 : 4.2) * sp * Math.max(1, (S.speed || 1) * 0.6);
+    if (cp.u >= 1) {
+      cp.ax = cp.bx; cp.ay = cp.by; cp.u = 0;
+      if (!inb(cp.ax, cp.ay) || !cell(cp.ax, cp.ay).tube) { const t = S.tubeList[Math.random() * S.tubeList.length | 0]; cp.ax = cp.bx = t[0]; cp.ay = cp.by = t[1]; continue; }
+      const opts = D4.filter(([dx, dy]) => inb(cp.ax + dx, cp.ay + dy) && cell(cp.ax + dx, cp.ay + dy).tube);
+      if (!opts.length) { cp.bx = cp.ax; cp.by = cp.ay; cp.u = 1; continue; }
+      let pick = opts[Math.random() * opts.length | 0];
+      if (cp.dx !== undefined && Math.random() < 0.8) { const cont = opts.find(o => o[0] === cp.dx && o[1] === cp.dy); if (cont) pick = cont; }
+      cp.dx = pick[0]; cp.dy = pick[1]; cp.bx = cp.ax + pick[0]; cp.by = cp.ay + pick[1];
+    }
+  }
+}
+const ui = { tool: TOOLS.inspect, sel: null, ghost: null, ghostOK: true, pending: null, lastPlace: 0 };
+function render(now) {
+  const night = S.light < 0.5;
+  LOD = cam.zoom < 0.55 ? 0 : cam.zoom > 1.15 ? 2 : 1;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = '#05070f'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const k = DPR * cam.zoom;
+  ctx.setTransform(k, 0, 0, k, (VW / 2 - cam.x * cam.zoom) * DPR, (VH / 2 - cam.y * cam.zoom) * DPR);
+  if (!terrainCache) buildTerrainCache();
+  ctx.drawImage(terrainCache, -COX, -COY, terrainCache.width / CS, terrainCache.height / CS);
+  // visible rect in world coords for culling
+  const hw = VW / 2 / cam.zoom + 80, hh = VH / 2 / cam.zoom + 90;
+  const x0 = cam.x - hw, x1 = cam.x + hw, y0 = cam.y - hh, y1 = cam.y + hh;
+  glows.length = 0;
+  // ground tints
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const c = cell(x, y); if (!c.zone) continue;
+    const p = P(x + 0.5, y + 0.5); if (p[0] < x0 || p[0] > x1 || p[1] < y0 || p[1] > y1) continue;
+    const col = ZONES[ZK[c.zone]].color;
+    ctx.globalAlpha = c.lvl ? 0.35 : 0.5; diamond(ctx, x, y, 1, 1, col, null); ctx.globalAlpha = 1;
+    if (!c.lvl) { ctx.strokeStyle = col; ctx.lineWidth = 1; ctx.globalAlpha = 0.8; diamond(ctx, x + 0.05, y + 0.05, 0.9, 0.9, null, col); ctx.globalAlpha = 1; }
+  }
+  // capsules bucketed by diagonal
+  const byDiag = {};
+  for (const cp of capsules) { const fx = cp.ax + (cp.bx - cp.ax) * cp.u, fy = cp.ay + (cp.by - cp.ay) * cp.u; const d = Math.floor(fx + fy + 1); (byDiag[d] = byDiag[d] || []).push([fx, fy, cp.col]); }
+  // depth-sorted objects
+  for (let d = 0; d <= 2 * N - 2; d++) {
+    for (let x = Math.max(0, d - N + 1); x <= Math.min(d, N - 1); x++) {
+      const y = d - x, cl = cell(x, y);
+      const p = P(x + 0.5, y + 0.5); if (p[0] < x0 || p[0] > x1 || p[1] < y0 - 40 || p[1] > y1 + 110) continue;
+      if (cl.tube) drawTube(ctx, x, y, cl);
+      else {
+        let ak = anim[y * N + x], t = 1;
+        if (ak !== undefined) { t = (now - ak) / 1500; if (t >= 1) { delete anim[y * N + x]; t = 1; } }
+        const grow = t < 1;
+        if (grow && ((cl.zone && cl.lvl > 0 && !cl.b && !cl.mp) || cl.b)) { const e = 1 - Math.pow(1 - t, 3), bp = P(x + 0.5, y + 0.5); ctx.save(); ctx.translate(bp[0], bp[1] + 6); ctx.scale(1, Math.max(0.05, e)); ctx.translate(-bp[0], -bp[1] - 6); }
+        if (cl.zone && cl.lvl > 0 && !cl.b && !cl.mp) {
+          const ab = cl.ab > 25; if (ab) ctx.globalAlpha = 0.42;
+          drawZoneBuilding(ctx, x, y, cl, now, night);
+          if (ab) ctx.globalAlpha = 1;
+        }
+        else if (cl.b) { const b = S.bmap[cl.b], dd = DEFS[b.def]; if (x === b.x + dd.w - 1 && y === b.y + dd.h - 1) drawPlaced(ctx, b, now, night); }
+        if (grow && ((cl.zone && cl.lvl > 0 && !cl.b && !cl.mp) || cl.b)) {
+          ctx.restore(); const bp = P(x + 0.5, y + 0.5);
+          for (let q = 0; q < 6; q++) { const a = q * 1.05 + t * 2, r = 4 + t * 16 + q; ctx.fillStyle = 'rgba(210,205,195,' + (0.45 * (1 - t)) + ')'; ctx.beginPath(); ctx.ellipse(bp[0] + Math.cos(a) * r * 1.4, bp[1] + 6 + Math.sin(a) * r * 0.5, 3 + t * 4, 2 + t * 2, 0, 0, 6.3); ctx.fill(); }
+        }
+      }
+    }
+    const arr = byDiag[d]; if (arr) for (const [fx, fy, col] of arr) {
+      const p = P(fx + 0.5, fy + 0.5); ctx.fillStyle = col; ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.ellipse(p[0], p[1] - 9, 4.5, 2.8, 0, 0, 6.3); ctx.fill(); ctx.stroke();
+      if (night) lightOn(p[0], p[1] - 9, 9, 'rgba(255,230,150,0.5)');
+    }
+  }
+  // selection & ghost
+  if (ui.sel) { const b = ui.sel.b ? S.bmap[ui.sel.b] : null; if (b) { const dd = DEFS[b.def]; ctx.lineWidth = 2; diamond(ctx, b.x, b.y, dd.w, dd.h, 'rgba(255,255,255,0.12)', '#fff'); } else { ctx.lineWidth = 2; diamond(ctx, ui.sel.x, ui.sel.y, 1, 1, 'rgba(255,255,255,0.15)', '#fff'); } }
+  if (ui.ghost && ui.tool.kind !== 'inspect') {
+    const g = ui.ghost; let w = 1, h = 1, x = g.x, y = g.y;
+    if (ui.tool.kind === 'build') { const dd = DEFS[ui.pending ? ui.pending.def : curDef()]; w = dd.w; h = dd.h; x = g.x - ((w - 1) >> 1); y = g.y - ((h - 1) >> 1); }
+    ctx.lineWidth = 2; diamond(ctx, x, y, w, h, ui.ghostOK ? 'rgba(80,255,150,0.30)' : 'rgba(255,80,80,0.35)', ui.ghostOK ? '#6bffa0' : '#ff6b6b');
+  }
+  // night darkness
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  const dark = (1 - S.light) * 0.58;
+  if (dark > 0.01) { ctx.fillStyle = 'rgba(4,8,34,' + dark + ')'; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+  if (dark > 0.05 && glows.length) {
+    ctx.setTransform(k, 0, 0, k, (VW / 2 - cam.x * cam.zoom) * DPR, (VH / 2 - cam.y * cam.zoom) * DPR);
+    ctx.globalCompositeOperation = 'lighter';
+    for (const [gx, gy, r0, col] of glows) { const r = r0 * 0.45; ctx.fillStyle = col.replace(/[\d.]+\)$/, (parseFloat(col.match(/([\d.]+)\)$/)[1]) * Math.min(1, dark / 0.4)) + ')'); ctx.beginPath(); ctx.arc(gx, gy, r, 0, 6.3); ctx.fill(); }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+}
+
+/* ===================== Input ===================== */
+function screenToTile(sx, sy) {
+  const wx = (sx - VW / 2) / cam.zoom + cam.x, wy = (sy - VH / 2) / cam.zoom + cam.y;
+  const fx = (wy / (TH / 2) + wx / (TW / 2)) / 2, fy = (wy / (TH / 2) - wx / (TW / 2)) / 2;
+  return { x: Math.floor(fx), y: Math.floor(fy) };
+}
+function clampCam() { const lim = N * TW / 2 + 60; cam.x = clamp(cam.x, -lim, lim); cam.y = clamp(cam.y, -40, N * TH + 40); }
+const ptrs = new Map(); let gest = null, drag = null;
+canvas.addEventListener('pointerdown', e => {
+  if (!started) return;
+  canvas.setPointerCapture(e.pointerId);
+  ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (ptrs.size === 2) {
+    const [a, b] = [...ptrs.values()];
+    gest = { d: Math.hypot(a.x - b.x, a.y - b.y), z: cam.zoom, cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2, camx: cam.x, camy: cam.y };
+    drag = null;
+  } else if (ptrs.size === 1) {
+    drag = { sx: e.clientX, sy: e.clientY, lx: e.clientX, ly: e.clientY, moved: false, painting: false, camx: cam.x, camy: cam.y, last: null, changed: false, seen: new Set(), n: 0 };
+  }
+});
+canvas.addEventListener('pointermove', e => {
+  if (!started) return;
+  const p = ptrs.get(e.pointerId);
+  if (!p) { updateGhost(e.clientX, e.clientY); return; }
+  p.x = e.clientX; p.y = e.clientY;
+  if (gest && ptrs.size >= 2) {
+    const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
+    cam.zoom = clamp(gest.z * d / Math.max(10, gest.d), 0.4, 2.6);
+    const cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+    cam.x = gest.camx - (cx - gest.cx) / cam.zoom; cam.y = gest.camy - (cy - gest.cy) / cam.zoom; clampCam();
+    return;
+  }
+  if (!drag) return;
+  const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
+  if (!drag.moved && Math.hypot(dx, dy) > CONFIG.dragThreshold) {
+    drag.moved = true;
+    drag.painting = !!ui.tool.drag;
+  }
+  if (drag.moved) {
+    if (drag.painting) {
+      const t = screenToTile(e.clientX, e.clientY);
+      if (!drag.last) { const t0 = screenToTile(drag.sx, drag.sy); drag.seen.add(t0.x + ',' + t0.y); drag.n = 1; applyTool(t0.x, t0.y, true); drag.last = t0; }
+      lineTiles(drag.last, t, (x, y) => { const k = x + ',' + y; if (drag.seen.has(k)) return; drag.seen.add(k); const sp = ui.tool.kind === 'zone' && ui.tool.z ? CONFIG.zonePaintSpacing : 1; if (drag.n++ % sp === 0) applyTool(x, y, true); }); drag.last = t; updateGhost(e.clientX, e.clientY);
+    } else { cam.x = drag.camx - dx / cam.zoom; cam.y = drag.camy - dy / cam.zoom; clampCam(); }
+  }
+});
+function endPtr(e) {
+  const had = ptrs.delete(e.pointerId);
+  if (!had) return;
+  if (ptrs.size < 2) gest = null;
+  if (drag && ptrs.size === 0) {
+    if (!drag.moved) { const t = screenToTile(e.clientX, e.clientY); onTap(t.x, t.y); }
+    else if (drag.painting && drag.changed) { S.dirty = true; }
+    drag = null;
+  } else if (ptrs.size === 1 && gest === null) { drag = null; }
+}
+canvas.addEventListener('pointerup', endPtr); canvas.addEventListener('pointercancel', e => { ptrs.delete(e.pointerId); gest = null; drag = null; });
+canvas.addEventListener('wheel', e => { e.preventDefault(); const z0 = cam.zoom; cam.zoom = clamp(cam.zoom * (e.deltaY < 0 ? 1.12 : 1 / 1.12), 0.4, 2.6); clampCam(); }, { passive: false });
+function lineTiles(a, b, fn) { let x = a.x, y = a.y; const dx = Math.abs(b.x - x), dy = Math.abs(b.y - y), sx = x < b.x ? 1 : -1, sy = y < b.y ? 1 : -1; let err = dx - dy, n = 0; for (;;) { fn(x, y); if ((x === b.x && y === b.y) || n++ > 80) break; const e2 = 2 * err; if (e2 > -dy) { err -= dy; x += sx; } if (e2 < dx) { err += dx; y += sy; } } }
+function updateGhost(sx, sy) {
+  if (ui.pending) return;
+  const t = screenToTile(sx, sy); ui.ghost = inb(t.x, t.y) ? t : null;
+  if (ui.ghost && ui.tool.kind === 'build') { const d = DEFS[curDef()]; ui.ghostOK = !canPlace(curDef(), t.x - ((d.w - 1) >> 1), t.y - ((d.h - 1) >> 1)); }
+  else ui.ghostOK = true;
+}
+
+/* ---- placement preview with confirm / cancel ---- */
+function setPending(x, y) {
+  const dn = curDef(), d = DEFS[dn];
+  ui.pending = { def: dn, x: x - ((d.w - 1) >> 1), y: y - ((d.h - 1) >> 1), tx: x, ty: y };
+  ui.ghost = { x, y }; hideCard(); showConfirm();
+}
+function showConfirm() {
+  const p = ui.pending, bar = $('confirm'); if (!p) { bar.style.display = 'none'; return; }
+  const d = DEFS[p.def], err = canPlace(p.def, p.x, p.y) || (S.money < d.cost ? T('Not enough credits') : '');
+  ui.ghostOK = !err;
+  bar.style.display = 'flex';
+  $('cfTxt').innerHTML = '<b>' + T(d.name) + '</b> ' + fmt(d.cost) + ' cr' + (err ? '<br><span class="st-bad">' + err + '</span>' : '<br><span class="st-ok">' + T('Tap the map to move it') + '</span>');
+  $('cfRot').style.display = DEFS[p.def + '_r'] || DEFS[p.def].rotated ? 'inline-block' : 'none';
+  $('cfOk').disabled = !!err; $('cfOk').style.opacity = err ? 0.4 : 1;
+}
+function setInspect() { cancelPending(); ui.tool = TOOLS.inspect; ui.ghost = null; ui.sel = null; hideCard(); buildTabs(); $('hint').textContent = T(TOOLS.inspect.hint); $('bStop').style.display = 'none'; }
+function cancelPending() { ui.pending = null; ui.ghost = null; $('confirm').style.display = 'none'; }
+function confirmPending() {
+  const p = ui.pending; if (!p) return;
+  if (performance.now() - ui.lastPlace < CONFIG.placeCooldownMs) return;
+  const err = placeBuilding(p.def, p.x, p.y);
+  if (err) { toast(err); showConfirm(); return; }
+  ui.lastPlace = performance.now(); cancelPending(); S.dirty = true; refreshHUD(); setInspect();
+}
+function askConfirm(msg, yes) {
+  $('dlgTxt').textContent = msg; $('dlg').style.display = 'flex';
+  $('dlgYes').textContent = T('Yes'); $('dlgYes').onclick = () => { $('dlg').style.display = 'none'; yes(); };
+  $('dlgNo').onclick = () => { $('dlg').style.display = 'none'; };
+}
+function restartGame() { askConfirm(T('Start over? Your current colony will be deleted.'), () => askConfirm(T('Are you sure? This cannot be undone.'), () => { try { localStorage.removeItem(slotKey(curSlot)); } catch (e) {} closeSheet(); newInSlot(curSlot); })); }
+function applyTool(x, y, quiet) {
+  if (!inb(x, y)) return '';
+  const tl = ui.tool; let err = '';
+  switch (tl.kind) {
+    case 'zone': err = setZone(tl.z, x, y); break;
+    case 'tube': err = paintTube(tl.t, x, y); break;
+    case 'station': err = addStation(x, y); break;
+    case 'bulldoze': err = bulldoze(x, y); break;
+    case 'regolith': err = addRegolith(x, y); break;
+    case 'level': err = levelTile(x, y); break;
+    case 'build': return '';
+  }
+  if (drag) drag.changed = true;
+  if (err && !(quiet && drag && drag.painting)) toast(err);
+  else if (err && quiet) { if (err === T('Not enough credits')) toast(err); }
+  if (!err) { S.dirty = tl.kind !== 'zone' ? true : S.dirty; refreshHUD(); }
+  return err;
+}
+function onTap(x, y) {
+  if (!inb(x, y)) { ui.sel = null; hideCard(); return; }
+  if (performance.now() - ui.lastPlace < CONFIG.placeCooldownMs) return;
+  if (ui.tool.kind === 'build') { setPending(x, y); return; }
+  updateGhost(lastPointer.x, lastPointer.y);
+  if (ui.tool.kind === 'inspect') { selectTile(x, y); return; }
+  const had = S.money;
+  const err = applyTool(x, y, false);
+}
+const lastPointer = { x: 0, y: 0 };
+window.addEventListener('pointermove', e => { lastPointer.x = e.clientX; lastPointer.y = e.clientY; });
+
+/* ===================== UI ===================== */
+const $ = id => document.getElementById(id);
+let started = false, speed = 1, curTab = 'zones', sheetTab = null;
+const fmt = n => Math.round(n).toLocaleString('en-US');
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(() => t.style.display = 'none', 1900); }
+function buildTabs() {
+  const tb = $('tabs'); tb.innerHTML = '';
+  for (const t of TABS) { const b = document.createElement('button'); b.className = 'btn' + (t.id === curTab ? ' on' : ''); b.textContent = T(t.label) + (t.id === 'lm' && S.lm > 0 ? ' (' + S.lm + ')' : ''); b.onclick = () => { curTab = t.id; buildTabs(); }; tb.appendChild(b); }
+  const it = $('items'); it.innerHTML = '';
+  const tab = TABS.find(t => t.id === curTab);
+  for (const id of tab.items) {
+    const tl = TOOLS[id], b = document.createElement('button'); b.className = 'item' + (ui.tool.id === id ? ' sel' : '');
+    const colr = tl.kind === 'restart' ? '#ff6b6b' : tl.kind === 'zone' ? (tl.z ? ZONES[ZK[tl.z]].color : '#888') : tl.kind === 'build' ? DEFS[tl.def].color : tl.kind === 'tube' ? '#aebfd6' : '#8fa3c8';
+    b.innerHTML = '<i style="background:' + colr + '"></i><b>' + T(tl.name) + '</b><small>' + (tl.kind === 'build' && DEFS[tl.def].landmark ? T('free') : tl.cost ? fmt(tl.cost) + ' cr' : ' ') + '</small>';
+    b.onclick = () => { ui.rot = false; if (tl.kind === 'restart') { restartGame(); return; } if (ui.tool.id === id && id !== 'inspect') { setInspect(); return; } cancelPending(); ui.tool = tl; ui.ghost = null; $('hint').textContent = T(tl.hint); buildTabs(); if (tl.kind !== 'inspect') { ui.sel = null; hideCard(); } };
+    it.appendChild(b);
+  }
+}
+function buildRCI() {
+  const r = $('rci'); r.innerHTML = '';
+  for (const [k, col] of [['R', '#4cd98a'], ['C', '#4aa3ff'], ['I', '#ffc84a']]) r.innerHTML += '<div><div class="bar"><div class="mid"></div><div class="fill" id="rci' + k + '" style="background:' + col + '"></div></div>' + k + '</div>';
+}
+function updateRCI() {
+  for (const k of ['R', 'C', 'I']) { const v = S.demand[k], f = $('rci' + k); if (v >= 0) { f.style.top = (50 - v * 50) + '%'; f.style.bottom = '50%'; } else { f.style.top = '50%'; f.style.bottom = (50 + v * 50) + '%'; } f.style.opacity = '0.9'; }
+}
+function refreshHUD() {
+  $('bStop').style.display = (ui.tool.kind !== 'inspect' && !ui.pending) ? 'block' : 'none';
+  const st = S.stats || {};
+  $('vMoney').textContent = fmt(S.money); $('chMoney').classList.toggle('bad', S.money < 0);
+  $('vPop').textContent = fmt(S.pop);
+  $('vHap').textContent = Math.round(S.happiness) + '%'; $('chHap').className = 'chip' + (S.happiness < 40 ? ' bad' : S.happiness > 70 ? ' good' : '');
+  const sup = st.supply || 0, dem = st.demand || 0;
+  $('vPow').textContent = S.blackout ? 'BLACKOUT' : Math.round(sup) + ' MW';
+  $('chPow').className = 'chip' + (S.blackout ? ' bad' : '');
+  const ph = S.phase || 0, f = CONFIG.dayFraction, left = (ph < f ? f - ph : 1 - ph) * CONFIG.daysPerCycle;
+  $('clockMk').style.left = 'calc(' + (ph * 100) + '% - 2px)';
+  $('clockLbl').textContent = (ph < f ? T('Sunlit') : T('Night')) + ' ' + left.toFixed(1) + 'd';
+  updateRCI();
+  $('banner').style.display = 'none';
+  if (S.msNew) { toast(T('Milestone: ') + S.msNew + ' ' + T('residents! You earned a free landmark (Sights tab).')); S.msNew = 0; buildTabs(); }
+  const pl = problemList(), bw = $('bWarn');
+  bw.style.display = pl.length ? 'block' : 'none'; bw.textContent = '! ' + pl.length;
+  if ($('probs').style.display === 'flex') renderProblems(pl);
+}
+function problemList() {
+  const st = S.stats || {}, cfg = CONFIG, o = [];
+  const add = (t, why, fix) => o.push({ t: T(t), why: T(why), fix: T(fix) });
+  const f0 = v => Math.round(v || 0);
+  if (S.blackout) add('Power', 'Not enough electricity: ' + f0(st.demand) + ' MW needed, ' + f0(st.supply) + ' MW available. Everything slows down.', 'Build more Solar Arrays, Battery Banks (for the night) or a Fission Reactor.');
+  const cityLive = S.pop > 0 || (st.housing || 0) > 0;
+  if (cityLive && st.wRatio < 0.98) add('Water', 'Only ' + Math.round(st.wRatio * 100) + '% of the water residents need (' + f0(st.waterSupply) + ' of ' + f0(st.wDem) + ').', 'Build an Ice Mining Outpost and a Water Processing Plant, each connected by tube.');
+  if (cityLive && st.oRatio < 0.98) add('Oxygen', 'Only ' + Math.round(st.oRatio * 100) + '% of the oxygen residents need (' + f0(st.o2Supply) + ' of ' + f0(st.oDem) + ').', 'Water Processing Plants and Dome Parks both make oxygen. Build more.');
+  if ((st.coolRatio || 1) < 0.98) add('Reactor cooling', 'The reactor does not get enough raw water and runs weaker.', 'Build more Ice Mining Outposts.');
+  if (S.pop > 20 && (st.unemp || 0) > 0.15) add('Jobs', Math.round(st.unemp * 100) + '% of residents have no job.', 'Zone more Commercial or Industrial land, or Tourism.');
+  let zc = 0, zb = 0; for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const c = cell(x, y); if (c.zone && !c.b && !c.tube && !c.mp && !c.conn) zc++; }
+  for (const b of S.buildings) if (!b.conn && DEFS[b.def].needsTube) zb++;
+  if (zc > 0) add('No tube connection', zc + ' zone tile(s) are too far from a tube, so nothing grows there.', 'Lay a tube next to the zone (zones up to 2 tiles from a tube work).');
+  if (zb > 0) add('Disconnected buildings', zb + ' building(s) are not connected to the Landing Hub by tubes.', 'Connect them with tubes.');
+  if (S.pop > 30) {
+    const lowc = []; if ((st.med || 0) < S.pop * 0.5) lowc.push('medical'); if ((st.pol || 0) < S.pop * 0.5) lowc.push('safety'); if ((st.fire || 0) < S.pop * 0.5) lowc.push('emergency response');
+    if (lowc.length) add('Services', 'Low coverage: ' + lowc.join(', ') + '.', 'Build a Medical Center, Safety Station or Emergency Response building.');
+  }
+  if ((st.cong || 0) > 0.4) add('Tube traffic', 'Tubes are crowded, income and happiness drop.', 'Build main tubes or stations to add capacity.');
+  if (S.pop > 20 && S.happiness < 40) add('Unhappy residents', 'Happiness is ' + Math.round(S.happiness) + '%. Residents may leave.', 'Open the City menu to see what pulls happiness down.');
+  if (S.money < 0) add('Credits', 'You are in debt. Too many months in debt ends the game.', 'Raise taxes a little or stop building until income is positive.');
+  return o;
+}
+function renderProblems(pl) {
+  pl = pl || problemList();
+  $('prTitle').textContent = T('What is missing');
+  $('prList').innerHTML = pl.length ? pl.map(p => '<div class="pr"><b>' + p.t + '</b>' + p.why + '<br><i>' + p.fix + '</i></div>').join('') : '<div class="pr">' + T('Everything is fine.') + '</div>';
+  $('prClose').textContent = T('Close');
+}
+function setSpeed(s) {
+  speed = s; S && (S.speed = s); S && (S.paused = s === 0);
+  for (const k of [0, 1, 2, 4]) $('sp' + k).classList.toggle('on', k === s);
+}
+/* info card */
+function selectTile(x, y) { [x, y] = anchorOf(x, y); ui.sel = { x, y, b: cell(x, y).b }; showCard(); }
+function hideCard() { $('card').style.display = 'none'; ui.sel = null; }
+function statusLine(ok, txt) { return '<span class="' + (ok ? 'st-ok' : 'st-bad') + '">' + txt + '</span>'; }
+function showCard() {
+  if (!ui.sel) return;
+  const { x, y } = ui.sel, c = cell(x, y), st = S.stats; let h = '', acts = '';
+  const ln = (a, b) => '<div class="ln"><span>' + a + '</span><span>' + b + '</span></div>';
+  if (c.b) {
+    const b = S.bmap[c.b]; if (!b) { hideCard(); return; }
+    const d = DEFS[b.def];
+    const ok = !d.needsTube || b.conn;
+    h += '<h3>' + T(d.name) + '</h3>';
+    let status; if (!ok) status = statusLine(false, T('Not linked to a tube')); else if (d.needsLife !== false && d.kind !== 'solar' && d.kind !== 'nuclear' && d.kind !== 'battery' && !S.lifeOK && d.power < 0) status = statusLine(false, T('No water/oxygen')); else if (S.blackout && d.power < 0) status = statusLine(false, T('No power (blackout)')); else status = statusLine(true, T('Active'));
+    h += ln(T('Status'), status);
+    if (d.kind === 'solar') h += ln(T('Output'), Math.round(d.power * S.light) + ' / ' + d.power + ' MW (' + (S.light > 0.05 ? T('daylight') : T('night: 0')) + ')');
+    if (d.kind === 'nuclear') h += ln(T('Output'), Math.round(d.power * S.coolRatio) + ' / ' + d.power + ' MW') + ln(T('Cooling water'), d.cooling + ' units') + ln(T('Housing buffer'), CONFIG.nuclearBuffer + ' ' + T('tiles'));
+    if (d.kind === 'battery') h += ln(T('Stored'), fmt(S.storage) + ' / ' + fmt(st.battCap || 0) + ' MWh') + ln(T('Capacity'), fmt(d.storage) + ' MWh');
+    if (d.kind === 'ice') h += ln(T('Output'), d.rawWater + ' ' + T('water units')) + ln(T('Needs'), d.power * -1 + ' MW');
+    if (d.kind === 'plant') h += ln(T('Processes'), d.process + ' ' + T('units -> water + oxygen')) + ln(T('Needs'), -d.power + ' MW');
+    if (d.kind === 'dome') h += ln(T('Oxygen'), '+' + d.oxygen) + ln(T('Needs'), -d.power + ' MW, ' + d.water + ' ' + T('water')) + ln(T('Happiness'), T('raises nearby housing') + ' (' + CONFIG.parkRadius + ' ' + T('tiles') + ')');
+    if (d.kind === 'civic') h += ln(T('Covers'), d.cover + ' ' + T('residents')) + ln(T('Needs'), -d.power + ' MW');
+    if (d.landmark) h += ln(T('Landmark'), T('free, from a population milestone')) + ln(T('Happiness'), '+2') + ln(T('Tourists'), '+' + d.tourists);
+    if (d.kind === 'spaceport') h += ln(T('Income'), CONFIG.spaceportIncome + ' ' + T('cr/month')) + ln(T('Enables'), T('exports + 1.7x tourist income')) + ln(T('Needs'), -d.power + ' MW');
+    if (d.jobs) h += ln(T('Jobs'), d.jobs);
+    h += ln(T('Upkeep'), fmt(d.maint * S.settings.difficulty) + ' ' + T('cr/month'));
+    if (!d.fixed) { acts += '<button class="btn" id="aDoze">' + T('Demolish') + '</button>'; }
+  } else if (c.tube) {
+    const conn = S.connT && S.connT[idx(x, y)];
+    h += '<h3>' + (c.tube === 1 ? T('Street Tube') : c.tube === 2 ? T('Main Tube') : T('Tube Station')) + '</h3>' + ln(T('Status'), statusLine(conn, conn ? T('Linked to hub') : T('Not linked to the Landing Hub')));
+    h += ln(T('Capacity'), (c.tube === 1 ? CONFIG.tubeCapacity.street : c.tube === 2 ? CONFIG.tubeCapacity.main : CONFIG.tubeCapacity.station) + ' ' + T('trips')) + ln(T('Network traffic'), Math.round((st.usage || 0) * 100) + '% ' + T('of capacity'));
+    acts += '<button class="btn" id="aDoze">' + T('Remove') + '</button>';
+  } else if (c.zone) {
+    const z = ZONES[ZK[c.zone]];
+    if (c.lvl > 0) {
+      const L = zl(c); h += '<h3>' + T(z.names[L]) + '</h3>';
+      const ok = c.conn && st.op;
+      h += ln(T('Status'), c.ab > 25 ? statusLine(false, T('Abandoned: no service for a long time')) : !c.conn ? statusLine(false, T('No tube link - declining')) : S.blackout ? statusLine(false, T('No power (blackout)')) : !S.lifeOK ? statusLine(false, T('No water/oxygen')) : statusLine(true, T('Active')));
+      h += ln(T('Zone'), T(z.name) + ', ' + (c.mega ? T('merged 2x2 building') : T('level') + ' ' + c.lvl));
+      if (z.housing) h += ln(T('Housing'), z.housing[L]); if (z.jobs) h += ln(T('Jobs'), z.jobs[L]); if (z.tourists) h += ln(T('Tourists'), z.tourists[L]);
+      h += ln(T('Power use'), z.power[L] + ' MW');
+      h += ln(T('Needs'), (c.conn ? 'tube OK' : 'tube MISSING') + ', ' + (S.blackout ? 'power MISSING' : 'power OK') + ', ' + (S.lifeOK ? 'water/oxygen OK' : 'water/oxygen LOW'));
+      h += ln(T('Next step'), c.mega || c.lvl >= 3 ? (c.mega ? T('Top level') : T('Level 3: four together can merge')) : T('Upgrades when happiness is above') + ' ' + (c.lvl === 1 ? 55 : 65) + '% (' + T('now') + ' ' + Math.round(S.happiness) + '%)');
+      if (c.zone === 1) {
+        h += ln(T('Radiation shielding'), Math.round(c.shield * 100) + '%');
+        h += '<div class="help">' + T('Homes are built under a layer of moon dust (regolith) automatically. It protects residents from radiation. The cost is included in the zone price.') + '</div>';
+      }
+    } else { h += '<h3>' + T(z.name) + ' ' + T('zone') + '</h3>' + ln(T('Status'), c.conn ? statusLine(true, T('Waiting to grow')) : statusLine(false, T('Needs an adjacent tube linked to the hub'))); }
+    acts += '<button class="btn" id="aDoze">' + T('Clear') + '</button>';
+  } else {
+    const names = ['Lunar regolith', 'Crater floor (use Level terrain to flatten)', 'Polar ice (ice mining only)', 'Crater rim', 'Dark basalt plain', 'Bright highland dust', 'Boulder field', 'Mountain (use Level terrain to flatten)'];
+    h += '<h3>' + T(names[c.terr]) + '</h3>' + ln(T('Tile'), x + ', ' + y);
+    h += ln(T('Can build here'), c.terr === 1 || c.terr === 7 ? T('No, flatten it first') : c.terr === 2 ? T('Ice mining only') : T('Yes'));
+    { let best = 99; for (let yy = Math.max(0, y - 6); yy <= Math.min(N - 1, y + 6); yy++) for (let xx = Math.max(0, x - 6); xx <= Math.min(N - 1, x + 6); xx++) if (cell(xx, yy).tube) best = Math.min(best, Math.max(Math.abs(xx - x), Math.abs(yy - y))); h += ln(T('Nearest tube'), best === 99 ? T('more than 6 tiles away') : best + ' ' + T('tiles')); }
+  }
+  const card = $('card');
+  const html = '<button class="x" id="aX">x</button>' + h + (acts ? '<div class="acts">' + acts + '</div>' : '');
+  card.style.display = 'block';
+  if (card.dataset.h !== html) {
+    card.dataset.h = html; card.innerHTML = html;
+    $('aX').onclick = hideCard;
+    const r = $('aReg'); if (r) r.onclick = () => { const e = addRegolith(x, y); if (e) toast(e); showCard(); refreshHUD(); };
+    const dz = $('aDoze'); if (dz) dz.onclick = () => { const e = bulldoze(x, y); if (e) toast(e); hideCard(); refreshHUD(); };
+  }
+}
+
+/* ===================== Menu sheet: Power / City / Taxes / Settings ===================== */
+const SHEETS = ['Power', 'City', 'Taxes', 'Settings'];
+const kv = (a, b, cls) => '<div class="kv"><span>' + a + '</span><span' + (cls ? ' class="' + cls + '"' : '') + '>' + b + '</span></div>';
+const meter = (f, col) => '<div class="meter"><div style="width:' + Math.round(clamp(f, 0, 1) * 100) + '%' + (col ? ';background:' + col : '') + '"></div></div>';
+function openSheet(tab) { sheetTab = tab || sheetTab || 'Power'; $('sheet').style.display = 'flex'; renderSheet(true); }
+function closeSheet() { sheetTab = null; $('sheet').style.display = 'none'; }
+function renderSheet(full) {
+  if (!sheetTab) return;
+  if (full) {
+    const hd = $('sheetTabs'); hd.innerHTML = '';
+    for (const t of SHEETS) { const b = document.createElement('button'); b.className = 'btn' + (t === sheetTab ? ' on' : ''); b.textContent = T(t); b.onclick = () => { sheetTab = t; renderSheet(true); }; hd.appendChild(b); }
+    const x = document.createElement('button'); x.className = 'btn'; x.textContent = T('Close'); x.onclick = closeSheet; hd.appendChild(x);
+  }
+  const st = S.stats || {}, body = $('sheetbody');
+  if (sheetTab === 'Power') {
+    const ph = S.phase || 0, day = ph < CONFIG.dayFraction;
+    const bal = (st.supply || 0) - (st.demand || 0);
+    body.innerHTML = '<div class="sec"><h4>' + T('Sun') + '</h4>' + kv(T('Lunar clock'), day ? T('Sunlit') : T('Night'), day ? 'st-ok' : 'st-bad') + kv(T('Sunlight'), Math.round(S.light * 100) + '%') + '</div>' +
+      '<div class="sec"><h4>' + T('Generation') + '</h4>' + kv(T('Solar output'), Math.round(st.solarOut || 0) + ' / ' + Math.round(st.solarCap || 0) + ' MW', (st.solarCap > 0 && S.light < 0.05) ? 'st-bad' : '') +
+      kv(T('Nuclear output'), Math.round(st.nucOut || 0) + ' / ' + Math.round(st.nucCap || 0) + ' MW', st.nucCap > 0 ? 'st-ok' : '') +
+      kv(T('Total supply'), Math.round(st.supply || 0) + ' MW') + kv(T('Demand'), Math.round(st.demand || 0) + ' MW') + kv(T('Balance'), (bal >= 0 ? '+' : '') + Math.round(bal) + ' MW', bal >= 0 ? 'st-ok' : 'st-bad') + '</div>' +
+      '<div class="sec"><h4>' + T('Storage') + '</h4>' + kv(T('Stored'), fmt(S.storage) + ' / ' + fmt(st.battCap || 0) + ' MWh') + meter(st.battCap > 0 ? S.storage / st.battCap : 0) +
+      kv(T('Flow'), (st.flow >= 0 ? T('charging') : T('discharging')) + ' ' + Math.abs(Math.round(st.flow || 0)) + ' MW') + '</div>' +
+      '<div class="sec"><h4>' + T('Status') + '</h4>' + kv(T('Grid'), S.blackout ? T('BLACKOUT') : T('Stable'), S.blackout ? 'st-bad' : 'st-ok') +
+      '<div style="color:#a9bbdd;font-size:12px;margin-top:4px">' + T('Night lasts about 14.75 days. Solar gives nothing at night. Add Battery Banks or a Fission Reactor (needs cooling water and no housing within 4 tiles).') + '</div></div>';
+  } else if (sheetTab === 'City') {
+    const hf = st.hf || {}, lab = { base: 'Base', power: 'Power', life: 'Water and oxygen', congestion: 'Tube congestion', shielding: 'Radiation shielding', parks: 'Dome parks', dust: 'Industrial dust', tourism: 'Tourism', landmarks: 'Landmarks', taxes: 'Taxes', services: 'Services', unemployment: 'Unemployment' };
+    let hh = ''; for (const k in hf) hh += kv(T(lab[k] || k), (hf[k] >= 0 ? '+' : '') + hf[k].toFixed(1), hf[k] < -0.05 ? 'st-bad' : hf[k] > 0.05 ? 'st-ok' : '');
+    const L = S.last || {};
+    body.innerHTML = '<div class="sec"><h4>' + T('People') + '</h4>' + kv(T('Population'), fmt(S.pop)) + kv(T('Housing capacity'), fmt(st.housing || 0)) + kv(T('Workers'), fmt(st.workers || 0)) +
+      kv(T('Jobs (working)'), fmt((st.jobsAll || 0) * (st.op || 0)) + ' / ' + fmt(st.jobsAll || 0)) + kv(T('Commercial / Industrial / Tourism / Public jobs'), [st.jobsC, st.jobsI, st.jobsT, st.jobsP].map(v => fmt(v || 0)).join(' / ')) +
+      kv(T('Unemployed'), Math.round((st.unemp || 0) * 100) + '%') + kv(T('Average shielding'), Math.round((st.avgShield || 0) * 100) + '%') + '</div>' +
+      '<div class="sec"><h4>' + T('Life support') + '</h4>' + kv(T('Raw water (ice)'), Math.round(st.rawWater || 0) + ' ' + T('units')) + kv(T('Water supply / demand'), (st.waterSupply || 0).toFixed(1) + ' / ' + (st.wDem || 0).toFixed(1), (st.wRatio >= 0.98) ? 'st-ok' : 'st-bad') +
+      kv(T('Oxygen supply / demand'), (st.o2Supply || 0).toFixed(1) + ' / ' + (st.oDem || 0).toFixed(1), (st.oRatio >= 0.98) ? 'st-ok' : 'st-bad') + '</div>' +
+      '<div class="sec"><h4>' + T('Transit') + '</h4>' + kv(T('Traffic / capacity'), Math.round(st.trips || 0) + ' / ' + Math.round(st.capT || 0)) + kv(T('Congestion'), Math.round((st.cong || 0) * 100) + '%', st.cong > 0.3 ? 'st-bad' : '') + '</div>' +
+      '<div class="sec"><h4>' + T('Happiness') + ' ' + Math.round(S.happiness) + '% (' + T('target') + ' ' + Math.round(st.hTarget || 0) + ')</h4>' + hh + '</div>' +
+      '<div class="sec"><h4>' + T('Last month') + '</h4>' + kv(T('Taxes'), fmt(L.tax || 0)) + kv(T('Exports'), fmt(L.exports || 0)) + kv(T('Tourism'), fmt(L.tourism || 0)) + kv(T('Spaceport'), fmt(L.port || 0)) +
+      kv(T('Upkeep'), '-' + fmt(L.expense || st.maintenance || 0)) + kv(T('Net'), (L.net >= 0 ? '+' : '') + fmt(L.net || 0), L.net >= 0 ? 'st-ok' : 'st-bad') + (S.negMonths ? kv(T('Months below limit'), S.negMonths + ' / ' + CONFIG.gameOverMonths, 'st-bad') : '') + '</div>';
+  } else if (full && sheetTab === 'Taxes') {
+    let h = '<div class="sec"><h4>' + T('Tax rates') + '</h4><div style="color:#a9bbdd;font-size:12px">' + T('Higher taxes bring more credits but lower happiness (9% is neutral).') + '</div>';
+    for (const k of ['R', 'C', 'I', 'T']) h += '<div class="slrow"><div class="kv"><span>' + T(ZONES[k].name) + '</span><span id="tv' + k + '">' + S.tax[k] + '%</span></div><input type="range" min="0" max="20" step="1" value="' + S.tax[k] + '" data-k="' + k + '"></div>';
+    body.innerHTML = h + '</div>';
+    body.querySelectorAll('input[type=range]').forEach(el => el.oninput = () => { S.tax[el.dataset.k] = +el.value; $('tv' + el.dataset.k).textContent = el.value + '%'; });
+  } else if (full && sheetTab === 'Settings') {
+    body.innerHTML = '<div class="sec"><h4>' + T('Game') + '</h4>' +
+      '<div class="slrow"><div class="kv"><span>' + T('Lunar cycle length (real seconds at 1x)') + '</span><span id="svC">' + S.settings.cycleSeconds + '</span></div><input type="range" id="slC" min="60" max="900" step="30" value="' + S.settings.cycleSeconds + '"></div>' +
+      '<div class="slrow"><div class="kv"><span>' + T('Difficulty (upkeep up, taxes down)') + '</span><span id="svD">' + S.settings.difficulty.toFixed(1) + '</span></div><input type="range" id="slD" min="0.5" max="1.5" step="0.1" value="' + S.settings.difficulty + '"></div>' +
+      '<label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:13px"><input type="checkbox" id="ckMR"' + (S.settings.monthReport ? ' checked' : '') + '> ' + T('Show a short money report every month') + '</label>' + '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn" id="bSave">' + T('Save now') + '</button><button class="btn" id="bCities">' + T('My cities') + '</button><button class="btn" id="bExp">' + T('Export save') + '</button><button class="btn" id="bImp">' + T('Import save') + '</button><input type="file" id="fImp" accept=".json,application/json" style="display:none"><button class="btn" id="bNewG">' + T('Start over') + '</button></div>' +
+      '<div style="color:#a9bbdd;font-size:12px;margin-top:8px">' + T('Autosaves every 30 seconds into this city slot (3 slots). All other numbers live in the CONFIG object at the top of the source.') + '</div></div>' +
+      '<div class="sec"><h4>' + T('Language') + '</h4>' + kv('English', 'Hebrew: planned') + '</div>';
+    $('slC').oninput = e => { const v = +e.target.value; const ph = S.phase || 0, cyc = S.cycle - 1; S.settings.cycleSeconds = v; S.time = (cyc + ph) * v; $('svC').textContent = v; };
+    $('slD').oninput = e => { S.settings.difficulty = +e.target.value; $('svD').textContent = (+e.target.value).toFixed(1); };
+    $('ckMR').onchange = e => { S.settings.monthReport = e.target.checked; };
+    $('bSave').onclick = () => toast(saveGame() ? T('Saved') : T('Could not save'));
+    $('bNewG').onclick = () => restartGame();
+    $('bCities').onclick = () => openStart();
+    $('bExp').onclick = () => { try { const o = serialize(); o.meta = { pop: Math.round(S.pop), money: Math.round(S.money), cycle: S.cycle, when: Date.now() }; const bl = new Blob([JSON.stringify(o)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(bl); a.download = 'moon-city-' + curSlot + '.json'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); toast(T('Save file downloaded')); } catch (e) { toast(T('Could not export')); } };
+    $('bImp').onclick = () => $('fImp').click();
+    $('fImp').onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { try { const o = JSON.parse(r.result); if (!o || o.v !== 1 || !o.cells || o.cells.length !== 1024 && o.cells.length !== 2304) throw 0; askConfirm(T('Replace the current city with this file?'), () => { applySave(o); saveGame(); closeSheet(); startPlay(); }); } catch (x) { toast(T('Not a valid Moon City save')); } }; r.readAsText(f); };
+  }
+}
+
+/* ===================== Start / game over / main loop ===================== */
+function translateStatic() { const d = I18N[LANG]; if (!d) return; document.querySelectorAll('[data-i]').forEach(el => { if (d[el.dataset.i] !== undefined) el.textContent = d[el.dataset.i]; }); }
+function startPlay() {
+  started = true; $('start').style.display = 'none'; $('over').style.display = 'none';
+  const c = P(N / 2 - 0.5, 12); cam.x = c[0]; cam.y = c[1]; cam.zoom = VW < 520 ? 0.75 : 0.9; clampCam();
+  ui.tool = TOOLS.inspect; ui.pending = null; ui.ghost = null; setSpeed(1); curTab = curTab; buildTabs(); hideCard(); refreshHUD();
+  $('hint').textContent = T(ui.tool.hint);
+}
+$('bWarn').onclick = () => { $('probs').style.display = 'flex'; renderProblems(); }; $('prClose').onclick = () => { $('probs').style.display = 'none'; }; $('bStop').onclick = setInspect; $('cfRot').onclick = () => { const p = ui.pending; if (!p) return; ui.rot = !ui.rot; const dn = DEFS[p.def].rotated ? p.def.replace(/_r$/, '') : p.def + '_r', d = DEFS[dn]; if (!d) return; ui.pending = { def: dn, x: p.tx - ((d.w - 1) >> 1), y: p.ty - ((d.h - 1) >> 1), tx: p.tx, ty: p.ty }; showConfirm(); }; $('cfOk').onclick = confirmPending; $('cfNo').onclick = cancelPending;
+function newInSlot(n) { curSlot = n; cancelPending(); newGame(); saveGame(); startPlay(); }
+function buildSlots() {
+  const box = $('slots'); box.innerHTML = '';
+  for (let i = 1; i <= SLOTS; i++) {
+    const m = slotMeta(i), row = document.createElement('div'); row.className = 'slot';
+    row.innerHTML = '<div class="inf"><b>' + T('City') + ' ' + i + '</b><small>' + (m ? T('Population') + ' ' + fmt(m.pop) + ', ' + fmt(m.money) + ' cr, ' + T('cycle') + ' ' + m.cycle : T('Empty')) + '</small></div>';
+    if (m) { const b = document.createElement('button'); b.className = 'btn on'; b.textContent = T('Continue'); b.onclick = () => { if (loadGame(i)) startPlay(); }; row.appendChild(b); }
+    const nb = document.createElement('button'); nb.className = 'btn'; nb.textContent = T('New');
+    nb.onclick = () => { if (m) askConfirm(T('Replace City') + ' ' + i + '?', () => newInSlot(i)); else newInSlot(i); };
+    row.appendChild(nb); box.appendChild(row);
+  }
+}
+function openStart() { if (started && S && !S.gameOver) saveGame(); started = false; cancelPending(); closeSheet(); buildSlots(); $('start').style.display = 'flex'; }
+$('bNew').onclick = () => newInSlot(1);
+$('bContinue').onclick = () => { if (loadGame()) startPlay(); else newInSlot(1); };
+$('bRestart').onclick = () => { newGame(); startPlay(); };
+$('sp0').onclick = () => setSpeed(0); $('sp1').onclick = () => setSpeed(1); $('sp2').onclick = () => setSpeed(2); $('sp4').onclick = () => setSpeed(4);
+$('bMenu').onclick = () => openSheet('City');
+$('chPow').onclick = () => openSheet('Power'); $('chMoney').onclick = () => openSheet('City'); $('chPop').onclick = () => openSheet('City'); $('chHap').onclick = () => openSheet('City');
+document.addEventListener('visibilitychange', () => { if (document.hidden && started && S && !S.gameOver) saveGame(); lastT = performance.now(); wakeUntil = lastT + 600; });
+window.addEventListener('beforeunload', () => { if (started && S && !S.gameOver) saveGame(); });
+
+let lastT = performance.now(), uiAcc = 0, saveAcc = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.1, (now - lastT) / 1000); lastT = now;
+  if (S && started) {
+    if (!S.gameOver && speed > 0) {
+      simAdvance(dt, speed);
+      saveAcc += dt; if (saveAcc >= CONFIG.autosaveSeconds) { saveAcc = 0; saveGame(); }
+    }
+    updateCapsules(dt);
+    uiAcc += dt;
+    if (uiAcc > 0.25) { uiAcc = 0; if (ui.pending) showConfirm(); refreshHUD(); if (ui.sel) showCard(); if (sheetTab) renderSheet(false); }
+    if (S.gameOver) $('over').style.display = 'flex';
+  }
+  if (S) { if (speed === 0 && !document.hidden && now > wakeUntil && now - lastRender < 100) return; lastRender = now; render(now); } // paused and idle: draw at 10 fps instead of 60
+}
+function init() {
+  resize(); buildRCI(); translateStatic();
+  newGame(); buildTabs();
+  const c = P(N / 2 - 0.5, 12); cam.x = c[0]; cam.y = c[1]; cam.zoom = VW < 520 ? 0.75 : 0.9;
+  buildSlots();
+  requestAnimationFrame(frame);
+}
+window.__mc = { startAnim, slotKey, openStart, buildSlots, newInSlot, restartGame, askConfirm, serialize, applySave, get curSlot() { return curSlot; }, setPending, confirmPending, cancelPending, onTap, get S() { return S; }, CONFIG, DEFS, ZONES, cam, ui, TOOLS, placeBuilding, setZone, paintTube, addStation, bulldoze, addRegolith, stepOnce, simAdvance, saveGame, loadGame, setSpeed, openSheet, closeSheet, startPlay, newGame, cell, tryMerge4, setN, curDef, tryMerge, anchorOf, zl, selectTile, setInspect, refreshHUD, problemList, levelTile };
+try { init(); } catch (e) { console.error(e); document.body.insertAdjacentHTML('beforeend', '<pre style="position:fixed;top:0;color:#f88;z-index:99">' + e.stack + '</pre>'); }
+</script>
+<script data-goatcounter="https://noa-moon-city.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
