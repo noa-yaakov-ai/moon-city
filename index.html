@@ -162,6 +162,7 @@ body.big #bottom{zoom:1.14}body.big #top{zoom:1.1}
     <button class="btn sm on" id="sp1">1x</button>
     <button class="btn sm" id="sp2">2x</button>
     <button class="btn sm" id="sp4">4x</button>
+    <button class="btn sm" id="bSnd" aria-label="Sound on/off">&#128266;</button>
     <button class="btn sm" id="bMenu" data-i="Menu">Menu</button>
   </div>
 </div>
@@ -692,6 +693,21 @@ const D4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
 
 
+/* ===================== sound (procedural Web Audio - no assets) ===================== */
+let AC = null, acGain = null;
+function sndOn() { return localStorage.getItem('mc_snd') !== '0'; }
+function ac() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); acGain = AC.createGain(); acGain.gain.value = 0.5; acGain.connect(AC.destination); } catch (_) { return null; } } if (AC.state === 'suspended') AC.resume(); return AC; }
+addEventListener('pointerdown', () => { if (sndOn()) ac(); }, { once: true });
+function snd(fn) { if (!sndOn() || document.body.classList.contains('photo')) return; const a = ac(); if (a) fn(a); }
+function tone(f0, f1, dur, type, vol, delay) { snd(a => { const t0 = a.currentTime + (delay || 0), o = a.createOscillator(), og = a.createGain(); o.type = type || 'sine'; o.frequency.setValueAtTime(f0, t0); if (f1) o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t0 + dur); og.gain.setValueAtTime(vol || 0.2, t0); og.gain.exponentialRampToValueAtTime(0.001, t0 + dur); o.connect(og); og.connect(acGain); o.start(t0); o.stop(t0 + dur + 0.03); }); }
+function noiseBurst(dur, fc0, fc1, vol) { snd(a => { const n = Math.floor(a.sampleRate * dur), buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; const src = a.createBufferSource(); src.buffer = buf; const f = a.createBiquadFilter(); f.type = 'lowpass'; f.frequency.setValueAtTime(fc0, a.currentTime); f.frequency.exponentialRampToValueAtTime(Math.max(40, fc1), a.currentTime + dur); const ng = a.createGain(); ng.gain.setValueAtTime(vol, a.currentTime); ng.gain.exponentialRampToValueAtTime(0.001, a.currentTime + dur); src.connect(f); f.connect(ng); ng.connect(acGain); src.start(); }); }
+const sBlip = () => tone(600, 420, 0.06, 'sine', 0.12);
+const sThunk = () => { tone(130, 80, 0.12, 'triangle', 0.25); noiseBurst(0.05, 900, 300, 0.10); };
+const sCrumble = () => noiseBurst(0.2, 1200, 200, 0.22);
+const sBuzz = () => tone(95, 85, 0.09, 'square', 0.10);
+const sChime = () => { tone(660, 660, 0.12, 'sine', 0.15); tone(880, 880, 0.2, 'sine', 0.15, 0.12); };
+const sRocket = () => { noiseBurst(3.0, 400, 60, 0.5); tone(55, 30, 3.0, 'sawtooth', 0.12); };
+
 /* ===================== rocket launches from the Spaceport (rare, with an alert on the advisors button) ===================== */
 const rkGap = () => (150 + Math.random() * 100) * S.settings.cycleSeconds / CONFIG.daysPerCycle; // 150-250 game days, in game seconds
 const RK_LEN = 30000;
@@ -705,7 +721,7 @@ function rocketStep(op) {
   if (left <= 0) {
     if (document.body.classList.contains('photo') || !sp.conn || !op) return;
     if (!r.alert) { r.alert = true; r.kind = 0; }
-    r.wall = performance.now(); r.bid = sp.id; r.alert = false; r.next = S.time + rkGap();
+    r.wall = performance.now(); r.bid = sp.id; r.alert = false; r.next = S.time + rkGap(); sRocket();
   }
 }
 const RK_NAMES = ['Cargo launch', 'Crew launch', 'Big launch'];
@@ -2411,9 +2427,9 @@ function applyTool(x, y, quiet) {
     case 'build': return '';
   }
   if (drag) drag.changed = true;
-  if (err && !(quiet && drag && drag.painting)) toast(err);
-  else if (err && quiet) { if (err === T('Not enough credits')) toast(err); }
-  if (!err) { S.dirty = tl.kind !== 'zone' ? true : S.dirty; refreshHUD(); }
+  if (err && !(quiet && drag && drag.painting)) { toast(err); sBuzz(); }
+  else if (err && quiet) { if (err === T('Not enough credits')) { toast(err); sBuzz(); } }
+  if (!err) { S.dirty = tl.kind !== 'zone' ? true : S.dirty; refreshHUD(); if (!quiet) { if (tl.kind === 'bulldoze' || tl.kind === 'metroDoze') sCrumble(); else sThunk(); } }
   return err;
 }
 function onTap(x, y) {
@@ -2442,7 +2458,7 @@ function buildTabs() {
     const tl = TOOLS[id], b = document.createElement('button'); b.className = 'item' + (ui.tool.id === id ? ' sel' : ''); const needN = tl.pop || (tl.kind === 'build' && DEFS[tl.def].pop) || 0, lockN = needN && (S.popPeak || 0) < needN ? needN : 0; const lmDone = tl.kind === 'build' && DEFS[tl.def].landmark && lmExists(tl.def); if (lockN) { b.style.opacity = 0.4; b.style.filter = 'grayscale(1)'; } if (lmDone) { b.style.opacity = 0.4; b.style.filter = 'grayscale(1)'; }
     const colr = tl.kind === 'restart' ? '#ff6b6b' : tl.kind === 'zone' ? (tl.z ? ZONES[ZK[tl.z]].color : '#888') : tl.kind === 'build' ? DEFS[tl.def].color : tl.kind === 'tube' ? '#aebfd6' : '#8fa3c8';
     b.innerHTML = '<i style="background:' + colr + '"></i><b>' + T(tl.name) + '</b><small>' + (tl.kind === 'build' && DEFS[tl.def].landmark && !DEFS[tl.def].paid ? (lmDone ? T('built') : T('free')) : lockN ? T('needs') + ' ' + lockN : lmDone ? T('built') : tl.cost ? fmt(tl.cost) + ' cr' : ' ') + '</small>';
-    b.onclick = () => { if (lockN) { toast(T('Needs') + ' ' + lockN + ' ' + T('residents') + (tl.def && DEFS[tl.def].real ? ' (' + DEFS[tl.def].real + ')' : '')); return; } if (lmDone) { toast(T('Already built. Demolish it to build it again.')); return; } ui.rot = false; if ((tl.kind === 'metro' && tl.id !== 'metroStation') || tl.kind === 'metroDoze' || tl.kind === 'cave') setLayer('metro'); else if (tl.id !== 'metroStation' && ui.layer === 'metro') setLayer('normal'); if (tl.kind === 'restart') { restartGame(); return; } if (ui.tool.id === id && id !== 'inspect') { setInspect(); return; } cancelPending(); ui.tool = tl; ui.ghost = null; $('hint').textContent = T(tl.hint); buildTabs(); if (tl.kind !== 'inspect') { ui.sel = null; hideCard(); } };
+    b.onclick = () => { if (lockN) { toast(T('Needs') + ' ' + lockN + ' ' + T('residents') + (tl.def && DEFS[tl.def].real ? ' (' + DEFS[tl.def].real + ')' : '')); sBuzz(); return; } if (lmDone) { toast(T('Already built. Demolish it to build it again.')); sBuzz(); return; } sBlip(); ui.rot = false; if ((tl.kind === 'metro' && tl.id !== 'metroStation') || tl.kind === 'metroDoze' || tl.kind === 'cave') setLayer('metro'); else if (tl.id !== 'metroStation' && ui.layer === 'metro') setLayer('normal'); if (tl.kind === 'restart') { restartGame(); return; } if (ui.tool.id === id && id !== 'inspect') { setInspect(); return; } cancelPending(); ui.tool = tl; ui.ghost = null; $('hint').textContent = T(tl.hint); buildTabs(); if (tl.kind !== 'inspect') { ui.sel = null; hideCard(); } };
     it.appendChild(b);
   }
 }
@@ -2468,7 +2484,7 @@ function refreshHUD() {
   updateRCI();
   $('banner').style.display = 'none';
   if (S.unlNew) { S.unlNew = false; toast(T('New buildings unlocked! Look for them in the tabs.')); buildTabs(); }
-  if (S.msNew) { toast(T('Milestone: ') + S.msNew + ' ' + T('residents! You earned a free landmark (Sights tab).')); S.msNew = 0; buildTabs(); }
+  if (S.msNew) { toast(T('Milestone: ') + S.msNew + ' ' + T('residents! You earned a free landmark (Sights tab).')); S.msNew = 0; buildTabs(); sChime(); }
   $('bAdv').classList.toggle('green', pendingUnlocks().length > 0);
   const pl = stableProblems(problemList()), bw = $('bWarn');
   bw.style.display = pl.length ? 'block' : 'none'; bw.textContent = '! ' + pl.length;
@@ -2883,7 +2899,7 @@ function drawTitleArt(cv2, o) {
   if (o) return c;
   const fade = c.createLinearGradient(0, H * 0.45, 0, H * 0.78); fade.addColorStop(0, 'rgba(3,5,12,0)'); fade.addColorStop(1, 'rgba(3,5,12,0.92)'); c.fillStyle = fade; c.fillRect(0, 0, W, H);
 }
-const GAME_VERSION = '0.59'; // 0.<batch number>: goes up by one with every published batch
+const GAME_VERSION = '0.60'; // 0.<batch number>: goes up by one with every published batch
 function stPanel(html) { $('stIn').innerHTML = html; $('stPanel').style.display = 'flex'; $('stPanel').scrollTop = 0; }
 function stClose() { $('stPanel').style.display = 'none'; buildSlots(); }
 function stBack(extra) { return '<button class="btn" id="stBack" style="margin-top:6px">' + T(extra || 'Back') + '</button>'; }
@@ -2923,11 +2939,15 @@ function stHow() { stPanel('<h2>' + T('How to play') + '</h2>' + ['Zone Resident
 function stSettings() {
   const big = localStorage.getItem('mc_big') === '1', tut = localStorage.getItem('mc_tut') !== 'off';
   stPanel('<h2>' + T('Settings') + '</h2><label class="srow"><span>' + T('Large buttons') + '</span><input type="checkbox" id="stBig"' + (big ? ' checked' : '') + '></label><label class="srow"><span>' + T('Show tips') + '</span><input type="checkbox" id="stTut"' + (tut ? ' checked' : '') + '></label>' +
-    '<div class="srow dim"><span>' + T('Language') + '</span><span>English (more soon)</span></div><div class="srow dim"><span>' + T('Sound and volume') + '</span><span>' + T('Coming soon') + '</span></div><p class="dim" style="font-size:12px">' + T('Difficulty is set per city: use the gear button in Saved cities.') + '</p>' + stBack());
+    '<div class="srow dim"><span>' + T('Language') + '</span><span>English (more soon)</span></div><label class="srow"><span>' + T('Sound') + '</span><input type="checkbox" id="stSnd"' + (sndOn() ? ' checked' : '') + '></label><p class="dim" style="font-size:12px">' + T('Difficulty is set per city: use the gear button in Saved cities.') + '</p>' + stBack());
   $('stBig').onchange = e => { localStorage.setItem('mc_big', e.target.checked ? '1' : '0'); document.body.classList.toggle('big', e.target.checked); };
+  $('stSnd').onchange = e => { localStorage.setItem('mc_snd', e.target.checked ? '1' : '0'); sndIcon(); };
   $('stTut').onchange = e => { localStorage.setItem('mc_tut', e.target.checked ? 'on' : 'off'); }; $('stBack').onclick = stClose;
 }
 function stAbout() { stPanel('<h2>MOON CITY</h2><p>' + T('A lunar colony builder in the spirit of the classic city games. Mine polar ice, power your city through the 14-day night, shield your people and grow from a landing hub to a city with its own sights.') + '</p><p><b>' + T('Created by') + ' Yaakov Hameiri</b><br>' + T('Built together with Noa, an AI assistant.') + '</p><p>' + T('Free to play. It runs in your browser and saves on this device only. Real space projects that inspired buildings are marked (real) or (concept) on their info cards.') + '</p><p><a class="btn" href="items.html" target="_blank" rel="noopener" style="display:inline-block;text-decoration:none;margin-top:4px">Item index</a></p><p class="dim" style="font-size:12px">Version ' + GAME_VERSION + '</p>' + stBack()); $('stBack').onclick = stClose; }
+function sndIcon() { $('bSnd').innerHTML = sndOn() ? '&#128266;' : '&#128263;'; }
+$('bSnd').onclick = () => { localStorage.setItem('mc_snd', sndOn() ? '0' : '1'); sndIcon(); if (sndOn()) { ac(); sBlip(); } };
+sndIcon();
 $('tmContinue').onclick = () => { const l = latestSlot(); if (l && loadGame(l)) startPlay(); };
 $('tmBuild').onclick = stSlotPick; $('tmSaved').onclick = stSaved; $('tmHow').onclick = stHow; $('tmSettings').onclick = stSettings; $('tmAbout').onclick = stAbout;
 addEventListener('resize', () => { if ($('start').style.display !== 'none') drawTitleArt(); });
@@ -2969,4 +2989,4 @@ try { init(); } catch (e) { console.error(e); document.body.insertAdjacentHTML('
 </script>
 <script data-goatcounter="https://noa-moon-city.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
-    </html>
+      </html>
