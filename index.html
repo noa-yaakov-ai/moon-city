@@ -1009,17 +1009,22 @@ function poly(c, pts, fill, stroke) {
   if (fill) { c.fillStyle = fill; c.fill(); } if (stroke) { c.strokeStyle = stroke; c.stroke(); }
 }
 function diamond(c, x, y, w, h, fill, stroke) { const A = P(x, y), B = P(x + w, y), C = P(x + w, y + h), D = P(x, y + h); poly(c, [A, B, C, D], fill, stroke); }
+let zbNoShadow = false; // during bakes: skip the leaning sun shadow (it is redrawn live every frame instead)
+function boxShadow(c, x, y, w, h, H) {
+  const A = P(x, y), B = P(x + w, y), C = P(x + w, y + h), D = P(x, y + h);
+  if (dnSmooth() && S.phase !== undefined && S.phase < 0.5) { // contact shadow leans with the sun
+    const f = S.phase / 0.5, k = 2 * f - 1, o = H * 0.35 * (0.35 + 0.65 * Math.abs(k)), ox = k * o * 1.0, oy = o * 0.5;
+    c.fillStyle = 'rgba(0,0,0,0.26)'; const pts = [A, B, C, D]; for (let i = 0; i < 4; i++) { const p = pts[i], q = pts[(i + 1) % 4]; c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1]); c.lineTo(q[0] + ox, q[1] + oy); c.lineTo(p[0] + ox, p[1] + oy); c.closePath(); c.fill(); }
+  } else { // contact shadow
+    c.fillStyle = 'rgba(0,0,0,0.28)'; c.beginPath(); const o = H * 0.35;
+    c.moveTo(B[0], B[1]); c.lineTo(B[0] + o, B[1] + o * 0.5); c.lineTo(C[0] + o, C[1] + o * 0.5); c.lineTo(D[0] + o * 0.4, D[1] + o * 0.2); c.lineTo(D[0], D[1]); c.lineTo(C[0], C[1]); c.closePath(); c.fill();
+  }
+}
 function box(c, x, y, w, h, H, col, lift) {
   lift = lift || 0;
   const A = P(x, y), B = P(x + w, y), C = P(x + w, y + h), D = P(x, y + h);
   const up = (p, k) => [p[0], p[1] - k];
-  if (!lift && H > 3 && dnSmooth() && S.phase !== undefined && S.phase < 0.5) { // contact shadow leans with the sun
-    const f = S.phase / 0.5, k = 2 * f - 1, o = H * 0.35 * (0.35 + 0.65 * Math.abs(k)), ox = k * o * 1.0, oy = o * 0.5;
-    c.fillStyle = 'rgba(0,0,0,0.26)'; const pts = [A, B, C, D]; for (let i = 0; i < 4; i++) { const p = pts[i], q = pts[(i + 1) % 4]; c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1]); c.lineTo(q[0] + ox, q[1] + oy); c.lineTo(p[0] + ox, p[1] + oy); c.closePath(); c.fill(); }
-  } else if (!lift && H > 3) { // contact shadow
-    c.fillStyle = 'rgba(0,0,0,0.28)'; c.beginPath(); const o = H * 0.35;
-    c.moveTo(B[0], B[1]); c.lineTo(B[0] + o, B[1] + o * 0.5); c.lineTo(C[0] + o, C[1] + o * 0.5); c.lineTo(D[0] + o * 0.4, D[1] + o * 0.2); c.lineTo(D[0], D[1]); c.lineTo(C[0], C[1]); c.closePath(); c.fill();
-  }
+  if (!lift && H > 3 && !(zbNoShadow && dnSmooth() && S.phase !== undefined && S.phase < 0.5)) boxShadow(c, x, y, w, h, H);
   const side = (p, q, f) => { // vertical face from ground edge p->q
     const pts = [up(p, lift), up(q, lift), up(q, lift + H), up(p, lift + H)];
     const g = c.createLinearGradient(0, pts[2][1], 0, pts[0][1]);
@@ -1152,7 +1157,8 @@ function buildTerrainCache() {
   terrainCache = cv;
 }
 const glows = [], capsules = [];
-function lightOn(x, y, r, col) { glows.push([x, y, r, col]); }
+let glowSink = null;
+function lightOn(x, y, r, col) { (glowSink || glows).push([x, y, r, col]); }
 
 function drawWindows(c, x, y, w, h, H, lit) { // window grid on both faces, lit windows at night, roof units
   if (H < 6) return;
@@ -1357,7 +1363,7 @@ function drawLook(c, prims, x0, y0, col, lit) {
     } else if (p.t === 'a') {
       if (LOD === 0) continue;
       const s = P(x0 + p.cx, y0 + p.cy); c.strokeStyle = '#8a8f9a'; c.lineWidth = 1; c.beginPath(); c.moveTo(s[0], s[1] - p.lift); c.lineTo(s[0], s[1] - p.lift - p.H); c.stroke();
-      c.fillStyle = (performance.now() / 600 | 0) % 2 ? '#ff5a5a' : '#802020'; c.fillRect(s[0] - 1, s[1] - p.lift - p.H - 1, 2, 2);
+      c.fillStyle = zbBlink ? '#ff5a5a' : '#802020'; c.fillRect(s[0] - 1, s[1] - p.lift - p.H - 1, 2, 2);
     }
   }
   return top;
@@ -1405,26 +1411,79 @@ function hueShift(col, dh, sm, lm) {
   const hh = h / 360; return 'rgb(' + Math.round(f(hh + 1 / 3) * 255) + ',' + Math.round(f(hh) * 255) + ',' + Math.round(f(hh - 1 / 3) * 255) + ')';
 }
 function tintCol(col, i) { const m = TINTS[i], [r, g, b] = col.match(/\d+/g).map(Number); return 'rgb(' + Math.min(255, r * m[0] | 0) + ',' + Math.min(255, g * m[1] | 0) + ',' + Math.min(255, b * m[2] | 0) + ')'; }
-function drawZoneBuilding(c, x, y, cl, now, night) {
+/* ---- zone building picture cache: bake each building once, blit it afterwards ----
+   Key: tile, zone, level, variant inputs, tint, lit state, active state, walkway side,
+   shield mound, LOD, antenna-blink bit, quantised sun angle, zoom. ~300-1500 pictures,
+   bounded by pixel count for phone memory; stale ones refresh a few per frame. */
+const ZB_CAP = 1500, ZB_PIXCAP = 24e6;
+const zbCache = new Map(); let zbPix = 0, zbBlink = 0, zbBudget = 0;
+function zbTop(prims, domes) { let t = 0; for (const p of prims) { const h = p.t === 'g' && domes ? p.H * 1.3 + p.r * 18 : (p.H || 0); t = Math.max(t, h + p.lift); } return t; }
+function zbPaint(c, x0, y0, sz, cl, col, prims, fd, lit, active) { // the static picture, exactly as before
+  if (cl.shield >= CONFIG.shield.regolith) regolithMound(c, x0, y0, sz, sz);
+  drawWalk(c, x0, y0, sz, sz, fd);
+  const top = drawLook(c, prims, x0, y0, col, lit);
+  drawDoor(c, x0, y0, sz, sz, fd, lit);
+  if (!active) { const m0 = P(x0 + sz / 2, y0 + sz / 2); c.fillStyle = '#ff5a5a'; c.beginPath(); c.arc(m0[0], m0[1] - top - 8, 3.5, 0, 6.3); c.fill(); }
+}
+function zbBake(x0, y0, sz, cl, col, prims, fd, lit, active) {
+  const topB = zbTop(prims, true);
+  const A = P(x0, y0), B = P(x0 + sz, y0), C2 = P(x0 + sz, y0 + sz), D = P(x0, y0 + sz);
+  const shX = topB * 0.35 + 6, shY = topB * 0.18 + 6; // leaning contact shadow reach
+  const wxL = D[0] - 16 - (fd && fd[0] < 0 ? 46 : 0) - shX, wxR = B[0] + 16 + (fd && fd[0] > 0 ? 46 : 0) + shX;
+  const wyT = A[1] - topB - 16 - (fd && fd[1] < 0 ? 34 : 0), wyB = C2[1] + 12 + shY + (fd && fd[1] > 0 ? 30 : 0);
+  const k2 = DPR * cam.zoom, txm = (VW / 2 - cam.x * cam.zoom) * DPR, tym = (VH / 2 - cam.y * cam.zoom) * DPR;
+  const bx = Math.round(k2 * wxL + txm), by = Math.round(k2 * wyT + tym);
+  const cv = document.createElement('canvas');
+  cv.width = Math.max(2, Math.ceil(k2 * wxR + txm) - bx); cv.height = Math.max(2, Math.ceil(k2 * wyB + tym) - by);
+  const g = cv.getContext('2d');
+  g.setTransform(k2, 0, 0, k2, txm - bx, tym - by);
+  const savedSink = glowSink, gl = []; glowSink = gl;
+  zbNoShadow = true; zbPaint(g, x0, y0, sz, cl, col, prims, fd, lit, active); zbNoShadow = false;
+  glowSink = savedSink;
+  return { cv, wx: wxL, wy: wyT, glows: gl, px: cv.width * cv.height };
+}
+function zbEvict() { while (zbCache.size > ZB_CAP || zbPix > ZB_PIXCAP) { const k0 = zbCache.keys().next().value, e0 = zbCache.get(k0); zbPix -= e0.px; zbCache.delete(k0); } }
+function drawZoneBuilding(c, x, y, cl, now, night, grow) {
   const k = ZK[cl.zone], z = ZONES[k], mega = !!cl.mega, L = mega ? 3 : cl.lvl - 1;
   const x0 = mega ? x - 1 : x, y0 = mega ? y - 1 : y, sz = mega ? 2 : 1;
   const active = S.stats.op && cl.conn;
   let hv = hash2(x * 7 + 3, y * 13 + 1), nv = LOOKS[k][L].length, v = Math.floor(hv * nv) % nv; if (mega && MEGA_OLD[k] !== undefined && nv > MEGA_OLD[k]) v = MEGA_OLD[k] + Math.floor(hv * 4) % (nv - MEGA_OLD[k]);
   let col = shade(z.bcol[L], 0.92 + hash2(x + 5, y * 3) * 0.2);
   { const P8 = PALS[k]; if (P8) { const pi = Math.floor(hash2(x * 3 + 1, y * 5 + 2) * P8.length) % P8.length; col = hueShift(col, P8[pi][0], P8[pi][1], P8[pi][2]); } }
-  if (cl.shield >= CONFIG.shield.regolith) regolithMound(c, x0, y0, sz, sz);
+  if (LOD === 0 && S.settings.fastFar) { // optional 'Fast far-zoom view': one shaded block per building (details would be a few pixels anyway)
+    const hh = [9, 17, 28, 44][Math.min(3, L)] * (mega ? 1.25 : 1); box(c, x0 + 0.08, y0 + 0.08, sz - 0.16, sz - 0.16, hh, col);
+    if (!active) { const m0 = P(x0 + sz / 2, y0 + sz / 2); c.fillStyle = '#ff5a5a'; c.beginPath(); c.arc(m0[0], m0[1] - hh - 8, 3.5, 0, 6.3); c.fill(); }
+    return;
+  }
+  const lit = active && night, prims = LOOKS[k][L][v], top = zbTop(prims, false);
   const fd = LOD > 0 ? faceDir(x0, y0, sz, sz) : null;
-  drawWalk(c, x0, y0, sz, sz, fd);
-  const top = drawLook(c, LOOKS[k][L][v], x0, y0, col, active && night);
-  drawDoor(c, x0, y0, sz, sz, fd, active && night);
-  if (!active) { const m0 = P(x0 + sz / 2, y0 + sz / 2); c.fillStyle = '#ff5a5a'; c.beginPath(); c.arc(m0[0], m0[1] - top - 8, 3.5, 0, 6.3); c.fill(); }
-  if (active && k === 'I' && L >= 1 && LOD > 0) {
+  let ent = null;
+  if (!grow) {
+    let hasA = false; for (const p of prims) if (p.t === 'a') { hasA = true; break; }
+    const phB = (dnSmooth() && S.phase !== undefined && S.phase < 0.5) ? 1 : 0; // 1 = leaning shadow drawn live, not baked
+    const key = [x, y, cl.zone, cl.lvl, mega ? 1 : 0, active ? 1 : 0, lit ? 1 : 0, LOD, cl.shield >= CONFIG.shield.regolith ? 1 : 0, fd ? fd.join('/') : '-', phB, hasA && LOD > 0 ? zbBlink : 0, cam.zoom.toFixed(4)].join(',');
+    ent = zbCache.get(key);
+    if (ent) { zbCache.delete(key); zbCache.set(key, ent); } // freshest
+    else if (zbBudget > 0) {
+      zbBudget--;
+      ent = zbBake(x0, y0, sz, cl, col, prims, fd, lit, active);
+      zbPix += ent.px; zbCache.set(key, ent); zbEvict();
+    }
+    if (ent) {
+      if (phB) for (const p of prims) if (p.t === 'b' && !p.lift && p.H > 3) boxShadow(c, x0 + p.px, y0 + p.py, p.w, p.h, p.H);
+      const k2 = DPR * cam.zoom, txm = (VW / 2 - cam.x * cam.zoom) * DPR, tym = (VH / 2 - cam.y * cam.zoom) * DPR;
+      c.save(); c.setTransform(1, 0, 0, 1, 0, 0);
+      c.drawImage(ent.cv, Math.round(k2 * ent.wx + txm), Math.round(k2 * ent.wy + tym));
+      c.restore();
+      for (const g of ent.glows) glows.push(g); // replay night-light glows from the cache
+    }
+  }
+  if (!ent) zbPaint(c, x0, y0, sz, cl, col, prims, fd, lit, active);
+  if (active && k === 'I' && L >= 1 && LOD > 0) { // moving smoke, beacon and sparks stay live every frame
     const sm = P(x0 + 0.8 * sz, y0 + 0.3 * sz), np = LOD === 2 ? 4 : 2;
     for (let q = 0; q < np; q++) { const ph = ((now / 2800 + q / np + hash2(x, y)) % 1), rr = (2.5 + ph * 7) * (sz > 1 ? 1.4 : 1);
       c.fillStyle = 'rgba(205,205,210,' + (0.34 * (1 - ph)) + ')'; c.beginPath(); c.arc(sm[0] + Math.sin(now / 900 + q * 2 + x) * 3 + ph * 7, sm[1] - top - 4 - ph * 30 * sz, rr, 0, 6.3); c.fill(); }
     if (night) lightOn(sm[0], sm[1] - top - 4, 9, 'rgba(255,150,70,0.35)');
-  }
-  if (active && k === 'I' && L >= 1 && LOD > 0) { // flashing roof beacon + welding sparks
     const bp = P(x0 + 0.25 * sz, y0 + 0.75 * sz), on = ((now / 700 + hash2(x * 3, y * 5) * 4) % 2) < 0.35;
     c.fillStyle = '#5a1a1a'; c.fillRect(bp[0] - 1, bp[1] - top - 4, 2, 4);
     c.fillStyle = on ? '#ff3b30' : '#7a2a28'; c.beginPath(); c.arc(bp[0], bp[1] - top - 5, 1.8, 0, 6.3); c.fill();
@@ -2147,6 +2206,7 @@ function render(now) {
   const hw = VW / 2 / cam.zoom + 80, hh = VH / 2 / cam.zoom + 90;
   const x0 = cam.x - hw, x1 = cam.x + hw, y0 = cam.y - hh, y1 = cam.y + hh;
   glows.length = 0;
+  zbBlink = (performance.now() / 600 | 0) % 2; zbBudget = 10;
   // ground tints
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
     const c = cell(x, y); if (!c.zone) continue;
@@ -2179,7 +2239,7 @@ function render(now) {
         else if (gOn) { ctx.save(); const e = Math.min(1, (t - (small ? 0.72 : 0.8)) / (small ? 0.28 : 0.2)), bp = P(gx + gw / 2, gy + gh / 2); ctx.translate(bp[0], bp[1] + 6); ctx.scale(1, 0.94 + 0.06 * e); ctx.translate(-bp[0], -bp[1] - 6); }
         if (cl.zone && cl.lvl > 0 && !cl.b && !cl.mp) {
           const ab = cl.ab > 25; if (ab) ctx.globalAlpha = 0.42;
-          drawZoneBuilding(ctx, x, y, cl, now, night);
+          drawZoneBuilding(ctx, x, y, cl, now, night, gOn);
           if (ab) ctx.globalAlpha = 1;
         }
         else if (cl.b) { const b = S.bmap[cl.b], dd = DEFS[b.def]; if (x === b.x + dd.w - 1 && y === b.y + dd.h - 1) drawPlaced(ctx, b, now, night); }
@@ -2642,6 +2702,7 @@ function renderSheet(full) {
     $('slD').oninput = e => { S.settings.difficulty = +e.target.value; $('svD').textContent = (+e.target.value).toFixed(1); };
     $('ckMR').onchange = e => { S.settings.monthReport = e.target.checked; };
     body.querySelector('.sec').insertAdjacentHTML('beforeend', '<label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:13px"><input type="checkbox" id="ckDN"' + (S.settings.dnSmooth !== false ? ' checked' : '') + '> ' + T('Smooth day/night colour (sunrise and sunset glow, stars)') + '</label>'); $('ckDN').onchange = e => { S.settings.dnSmooth = e.target.checked; wakeUntil = performance.now() + 600; };
+    body.querySelector('.sec').insertAdjacentHTML('beforeend', '<label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:13px"><input type="checkbox" id="ckFF"' + (S.settings.fastFar ? ' checked' : '') + '> ' + T('Fast far-zoom view (plain blocks when zoomed far out, for slow phones)') + '</label>'); $('ckFF').onchange = e => { S.settings.fastFar = e.target.checked; wakeUntil = performance.now() + 600; };
     body.querySelector('.sec').insertAdjacentHTML('beforeend', '<label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:13px"><input type="checkbox" id="ckRk"' + (S.settings.rocket !== false ? ' checked' : '') + '> ' + T('Rocket launches (now and then, from the Spaceport)') + '</label>'); $('ckRk').onchange = e => { S.settings.rocket = e.target.checked; };
     body.querySelector('.sec').insertAdjacentHTML('beforeend', '<label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:13px"><input type="checkbox" id="ckBig"' + (localStorage.getItem('mc_big') === '1' ? ' checked' : '') + '> ' + T('Large buttons (bigger top and bottom bars)') + '</label>');
     body.querySelector('.sec').insertAdjacentHTML('beforeend', '<label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:13px"><input type="checkbox" id="ckTut"' + (localStorage.getItem('mc_tut') === 'off' ? '' : ' checked') + '> ' + T('Show first-minutes tips') + '</label>');
@@ -2803,7 +2864,7 @@ function drawTitleArt(cv2, o) {
   if (o) return c;
   const fade = c.createLinearGradient(0, H * 0.45, 0, H * 0.78); fade.addColorStop(0, 'rgba(3,5,12,0)'); fade.addColorStop(1, 'rgba(3,5,12,0.92)'); c.fillStyle = fade; c.fillRect(0, 0, W, H);
 }
-const GAME_VERSION = '0.57'; // 0.<batch number>: goes up by one with every published batch
+const GAME_VERSION = '0.58'; // 0.<batch number>: goes up by one with every published batch
 function stPanel(html) { $('stIn').innerHTML = html; $('stPanel').style.display = 'flex'; $('stPanel').scrollTop = 0; }
 function stClose() { $('stPanel').style.display = 'none'; buildSlots(); }
 function stBack(extra) { return '<button class="btn" id="stBack" style="margin-top:6px">' + T(extra || 'Back') + '</button>'; }
@@ -2889,4 +2950,4 @@ try { init(); } catch (e) { console.error(e); document.body.insertAdjacentHTML('
 </script>
 <script data-goatcounter="https://noa-moon-city.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
-</html>
+  </html>
