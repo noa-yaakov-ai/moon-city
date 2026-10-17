@@ -216,7 +216,7 @@ body.big #bottom{zoom:1.14}body.big #top{zoom:1.1}
 
 /* ===================== CONFIG (all tunable numbers live here) ===================== */
 const CONFIG = {
-  gridSize: 64,            // map is gridSize x gridSize tiles
+  gridSize: 128,            // map is gridSize x gridSize tiles
   tileW: 64, tileH: 32,    // isometric tile size in world pixels
   startMoney: 15000,
   cycleSeconds: 360,       // real seconds (at 1x) for one lunar cycle = 29.5 Earth days. Settings slider changes this.
@@ -1239,7 +1239,9 @@ function applySave(o) {
     for (let y = 0; y < on; y++) for (let x = 0; x < on; x++) nc[y * N + x + offX] = oc[y * on + x];
     S.cells = nc; o.buildings.forEach(b => b.x += offX);
   } else S.cells = oc;
-  if (o.metro && !mig) for (const [i, m] of o.metro) if (S.cells[i]) S.cells[i].mt = m; S.metroDirty = true;
+  if (o.metro && !mig) for (const [i, m] of o.metro) if (S.cells[i]) S.cells[i].mt = m;
+  if (o.metro && mig) for (const [i, m] of o.metro) { const y = (i / on) | 0, x = i % on, ni = y * N + x + offX; if (S.cells[ni]) S.cells[ni].mt = m; }
+  S.metroDirty = true;
   for (const c of S.cells) if (c.zone === 1 && c.lvl > 0 && c.shield < CONFIG.shield.built) c.shield = CONFIG.shield.built;
   if (!S.cells.some(c => c.cv)) { const hb = (o.buildings || []).find(b => b.def === 'hub'); genCaves(o.seed || 0, hb ? hb.x + 1 : 15.5, hb ? hb.y + 1 : 12); }
   S.buildings = o.buildings; S.nextId = o.nextId; S.bmap = {}; for (const b of S.buildings) S.bmap[b.id] = b;
@@ -2749,8 +2751,10 @@ function render(now) {
   const x0 = cam.x - hw, x1 = cam.x + hw, y0 = cam.y - hh, y1 = cam.y + hh;
   glows.length = 0;
   zbBlink = (performance.now() / 600 | 0) % 2; zbBudget = 10;
-  // ground tints
-  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+  // ground tints (bounded to the visible diagonal/x range; flat diamonds need no height margin)
+  const tDLo = Math.max(0, Math.floor(y0 / (TH / 2)) - 1), tDHi = Math.min(2 * N - 2, Math.ceil(y1 / (TH / 2)) + 1);
+  for (let d = tDLo; d <= tDHi; d++) for (let x = Math.max(0, d - N + 1, Math.floor((x0 / (TW / 2) + d) / 2) - 2), xHi = Math.min(d, N - 1, Math.ceil((x1 / (TW / 2) + d) / 2) + 2); x <= xHi; x++) {
+    const y = d - x;
     const c = cell(x, y); if (!c.zone) continue;
     const p = P(x + 0.5, y + 0.5); if (p[0] < x0 || p[0] > x1 || p[1] < y0 || p[1] > y1) continue;
     const col = ZONES[ZK[c.zone]].color;
@@ -2761,8 +2765,9 @@ function render(now) {
   const byDiag = {};
   for (const cp of capsules) { const fx = cp.ax + (cp.bx - cp.ax) * cp.u, fy = cp.ay + (cp.by - cp.ay) * cp.u; const d = Math.floor(fx + fy + 1); (byDiag[d] = byDiag[d] || []).push([fx, fy, cp.col]); }
   // depth-sorted objects
-  for (let d = 0; d <= 2 * N - 2; d++) {
-    for (let x = Math.max(0, d - N + 1); x <= Math.min(d, N - 1); x++) {
+  const dLo = Math.max(0, Math.floor((y0 - 40) / (TH / 2)) - 1), dHi = Math.min(2 * N - 2, Math.ceil((y1 + 110) / (TH / 2)) + 1);
+  for (let d = dLo; d <= dHi; d++) {
+    for (let x = Math.max(0, d - N + 1, Math.floor((x0 / (TW / 2) + d) / 2) - 2), xHi = Math.min(d, N - 1, Math.ceil((x1 / (TW / 2) + d) / 2) + 2); x <= xHi; x++) {
       const y = d - x, cl = cell(x, y);
       const p = P(x + 0.5, y + 0.5); if (p[0] < x0 || p[0] > x1 || p[1] < y0 - 40 || p[1] > y1 + 110) continue;
       if (cl.tube) drawTube(ctx, x, y, cl);
@@ -3520,7 +3525,7 @@ function drawTitleArt(cv2, o) {
   if (o) return c;
   const fade = c.createLinearGradient(0, H * 0.45, 0, H * 0.78); fade.addColorStop(0, 'rgba(3,5,12,0)'); fade.addColorStop(1, 'rgba(3,5,12,0.92)'); c.fillStyle = fade; c.fillRect(0, 0, W, H);
 }
-const GAME_VERSION = '0.66'; // 0.<batch number>: goes up by one with every published batch
+const GAME_VERSION = '0.67'; // 0.<batch number>: goes up by one with every published batch
 function stPanel(html) { $('stIn').innerHTML = html; $('stPanel').style.display = 'flex'; $('stPanel').scrollTop = 0; }
 function stClose() { $('stPanel').style.display = 'none'; buildSlots(); }
 function stBack(extra) { return '<button class="btn" id="stBack" style="margin-top:6px">' + T(extra || 'Back') + '</button>'; }
