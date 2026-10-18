@@ -6,7 +6,7 @@ A SimCity-2000-style Moon colony game. One static file (`index.html`), no build 
 - Everything lives in `index.html`. All URLs are relative. Host from the repo root (GitHub Pages, main/root).
 - The GoatCounter line must stay as the last line before `</body>`. No other analytics.
 - Saves are local only (browser localStorage, 3 slots). Keep the save format compatible between versions.
-- Update recipe on github.com: delete old `index.html`, upload the new one, rename `1-index.html` to `index.html`, then check the live site hash matches.
+- Update recipe on github.com: edit `index.html` in place in the web editor (never delete/replace), commit on a scratch branch, open a PR, merge, then check the live site hash matches.
 - Free only: no paid services.
 
 ## Phone performance
@@ -28,3 +28,8 @@ A SimCity-2000-style Moon colony game. One static file (`index.html`), no build 
 - Mini-map at left: tap or drag to jump the camera.
 
 See `BACKLOG.md` for the idea list.
+
+
+## Version history
+- v0.75 (18.10.2026): next-milestone line under the population counter; 4 new late-game event cards (settler shuttle, static storm, Earthrise festival, rest day demand). Hebrew UI, saves compatible.
+- v0.74 (18.10.2026): one military base per city, cracked-building finder chip with jump, page fade-in, favicon.
