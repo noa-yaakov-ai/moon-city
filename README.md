@@ -31,5 +31,6 @@ See `BACKLOG.md` for the idea list.
 
 
 ## Version history
+- v0.76 (18.10.2026): HUD credits abbreviated (K/M/B) with the full total in the city sheet; 13 new scientist monuments with faces (pop gates 5000-9800, Copernicus through Fermi); tap a built monument in Sights to jump to it, plus a My monuments bar. Hebrew UI, saves compatible.
 - v0.75 (18.10.2026): next-milestone line under the population counter; 4 new late-game event cards (settler shuttle, static storm, Earthrise festival, rest day demand). Hebrew UI, saves compatible.
 - v0.74 (18.10.2026): one military base per city, cracked-building finder chip with jump, page fade-in, favicon.
