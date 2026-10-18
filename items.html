@@ -28,15 +28,32 @@ h2{margin:26px auto 10px;max-width:1060px;padding:0 14px;font-size:20px;color:#f
 .hint{margin-top:6px;font-size:12px;color:#7788a8;font-style:italic}
 footer{text-align:center;color:#5a6a8a;font-size:12px;padding:26px 12px}
 a.back{color:#9fe3ff}
+
+#topbar{position:sticky;top:0;z-index:50;background:rgba(10,14,26,0.96);backdrop-filter:blur(6px);padding:8px 10px 10px;border-bottom:1px solid #25304e}
+#search{width:100%;max-width:1060px;box-sizing:border-box;padding:9px 12px;border-radius:10px;border:1px solid #33405e;background:#121830;color:#dfe6f3;font-size:15px;outline:none;display:block;margin:0 auto}
+#search:focus{border-color:#4aa3ff}
+#tabs{display:flex;gap:6px;overflow-x:auto;padding:8px 2px 0;max-width:1060px;margin:0 auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+#tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;padding:6px 12px;border-radius:14px;border:1px solid #33405e;background:#121830;color:#9fb0cc;font-size:13.5px;text-decoration:none;white-space:nowrap;cursor:pointer;font-family:inherit}
+.tab.on{background:#2b4a80;border-color:#4aa3ff;color:#fff}
+.hidden{display:none!important}
+#nores{max-width:1060px;margin:18px auto;padding:0 14px;color:#7788a8;font-size:14px;display:none;text-align:center}
 </style>
 </head>
 <body>
 <header>
 <h1>MOON CITY - Item Index</h1>
 <div class="sub">כל הפריטים במשחק - every item in the game, drawn by the game's own engine</div>
-<div class="ver">for game v0.71 - מתאים לגרסה 0.71</div>
+<div class="ver">for game v0.74 - מתאים לגרסה 0.74</div>
 <div style="margin-top:10px"><a class="back" href="index.html">&larr; Back to the game - חזרה למשחק</a></div>
 </header>
+
+<div id="topbar">
+<input id="search" type="search" placeholder="חיפוש פריט... Search items..." autocomplete="off">
+<div id="tabs"><button class="tab on" data-cat="all">הכל · All</button></div>
+</div>
+<div id="nores">לא נמצאו פריטים · No items match</div>
+
 <nav><a href="#cat-start">The beginning</a><a href="#cat-ground">Ground and zones</a><a href="#cat-tubes">Tubes and metro</a><a href="#cat-power">Power</a><a href="#cat-life">Life support</a><a href="#cat-civic">Civic</a><a href="#cat-waste">Waste and recycling</a><a href="#cat-lm">Sights and monuments</a><a href="#cat-tools">Tools</a></nav>
 <h2 id="cat-start">The beginning <span class="hh">ההתחלה</span></h2>
 <div class="grid"><div class="card" id="hub">
@@ -488,5 +505,35 @@ a.back{color:#9fe3ff}
   <div class="stats"></div><div class="hint">Tap or drag to remove tubes, zones and buildings.</div>
 </div></div>
 <footer>Generated from Moon City v0.71 game data. Images rendered by the game's own drawing code on transparent background.<br>הדף נוצר אוטומטית מנתוני המשחק. תודה ששחקתם!</footer>
+
+<script>
+(function(){
+var nav=document.querySelector("nav"); if(nav) nav.classList.add("hidden");
+var tabs=document.getElementById("tabs"), search=document.getElementById("search"), nores=document.getElementById("nores");
+var secs=[];
+document.querySelectorAll('h2[id^="cat-"]').forEach(function(h){
+  var label=h.childNodes[0].textContent.trim(), hh=h.querySelector(".hh"); if(hh) label+=" · "+hh.textContent.trim();
+  var w=document.createElement("div"); w.className="secwrap"; h.parentNode.insertBefore(w,h); w.appendChild(h);
+  var el=w.nextSibling;
+  while(el && !(el.nodeType===1 && el.matches('h2[id^="cat-"]'))){ var nx=el.nextSibling; w.appendChild(el); el=nx; }
+  secs.push({id:h.id.slice(4), label:label, w:w, cards:[].slice.call(w.querySelectorAll(".card"))});
+});
+var cur="all";
+function apply(){
+  var q=(search.value||"").trim().toLowerCase(), total=0;
+  secs.forEach(function(sec){
+    var inCat=(q!==""||cur==="all"||sec.id===cur), shown=0;
+    sec.cards.forEach(function(c){ var ok=inCat&&(!q||c.textContent.toLowerCase().indexOf(q)>=0); c.classList.toggle("hidden",!ok); if(ok) shown++; });
+    sec.w.classList.toggle("hidden", shown===0); total+=shown;
+  });
+  nores.style.display = total===0 ? "block" : "none";
+}
+function setCat(id){ cur=id; [].forEach.call(tabs.querySelectorAll(".tab"), function(t){ var on=t.dataset.cat===id; t.classList.toggle("on", on); if(on) t.scrollIntoView({inline:"center", block:"nearest"}); }); apply(); }
+tabs.addEventListener("click", function(e){ var t=e.target.closest(".tab"); if(t) setCat(t.dataset.cat); });
+secs.forEach(function(sec){ var b=document.createElement("button"); b.className="tab"; b.dataset.cat=sec.id; b.textContent=sec.label; tabs.appendChild(b); });
+search.addEventListener("input", apply);
+})();
+</script>
+
 </body>
 </html>
