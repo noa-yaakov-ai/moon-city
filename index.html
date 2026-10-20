@@ -407,7 +407,16 @@ Object.assign(I18N.he, {
   'Homes are lightly shielded ({p}%). More dust cover keeps residents safer.': 'הבתים ממוגנים קלות ({p}%). עוד כיסוי אבק ישמור על התושבים.',
   'Blackout right now! Add power or batteries.': 'הפסקת חשמל עכשיו! הוסף חשמל או סוללות.',
   'Shields look fine. Keep homes under dust and domes.': 'המיגון נראה בסדר. שמור על בתים מתחת לאבק ולכיפות.',
-  'Six advisors, six goals. Each warns you before you spend below your safety reserve.': 'שישה יועצים, שש מטרות. כל אחד מזהיר לפני שיורדים מתחת לרזרבת הביטחון.',
+  'Eight advisors, eight goals. Each warns you before you spend below your safety reserve.': 'שמונה יועצים, שמונה מטרות. כל אחד מזהיר לפני שיורדים מתחת לרזרבת הביטחון.',
+  'Horizon Space & AI Academy': 'אקדמיית אופק לחלל ו-AI', 'Education': 'חינוך', 'Health & Safety': 'בריאות ובטיחות',
+  'Schools and coverage for every resident': 'בתי ספר וכיסוי לכל תושב', 'Medical, emergency and safety coverage': 'כיסוי רפואה, חירום ובטיחות',
+  'No school needed yet. A Kindergarten unlocks at 250 residents.': 'עוד לא צריך בית ספר. גן ילדים נפתח ב-250 תושבים.',
+  'Education covers all {p} residents.': 'החינוך מכסה את כל {p} התושבים.',
+  'Education covers {e} of {p} residents ({c}%).': 'החינוך מכסה {e} מתוך {p} תושבים ({c}%).',
+  'Build a {name} next to close the gap.': 'בנו {name} כדי לסגור את הפער.',
+  'The {name} covers 2,000 residents in one building - the cheapest upkeep per resident.': '{name} מכסה 2,000 תושבים בבניין אחד — התחזוקה הזולה ביותר לתושב.',
+  'Education is fine. Full coverage raises happiness.': 'החינוך תקין. כיסוי מלא מעלה אושר.',
+  'Medical, safety and emergency coverage is fine.': 'כיסוי הרפואה, הבטיחות והחירום תקין.',
   'Waste, recycling and landfills': 'אשפה, מחזור ומטמנות', 'Tourism': 'תיירות', 'Visitors and sight income': 'מבקרים והכנסה מאתרים',
   'Safety': 'בטיחות', 'Shields and emergencies': 'מיגון ומצבי חירום', 'Not enough credits': 'אין מספיק קרדיטים'
 });
@@ -459,9 +468,10 @@ for (const k of ['kilo','he3','lunaring','ice2','greenhouse','lunanet','printer'
     elevator: PS('Lunar Space Elevator', 1, 1, '#c0c8dc', 100, 500, { cost: 25000, maint: 100, pop: 10000, lvR: 10, real: 'concept' }),
     catstatue: PS('Astronaut Cat Statue', 1, 1, '#e8913a', 40, 60, { cost: 0, maint: 0, pop: 600, hapX: 1, real: 'concept: tribute to Felicette, the black-and-white cat who flew to space in 1963' }),
     alpha: PS('Moonbase Alpha', 4, 4, '#d8d0e4', 56, 800, { cost: 40000, maint: 150, jobs: 50, pop: 15000, hapX: 4, real: 'concept: SpaceX-style city' }),
-    kindergarten: PS('Lunar Kindergarten', 2, 2, '#f2d98a', 10, 0, { cost: 1600, maint: 12, jobs: 4, power: -3, pop: 250, hapX: 1, lvR: 8 }),
-    school: PS('Moon School', 3, 2, '#bcd2ee', 12, 0, { cost: 3800, maint: 28, jobs: 10, power: -5, pop: 800, hapX: 2, lvR: 9 }),
+    kindergarten: PS('Lunar Kindergarten', 2, 2, '#f2d98a', 10, 0, { cost: 1600, maint: 12, jobs: 4, power: -3, pop: 250, service: 'edu', cover: 250, multi: true, lvR: 8 }),
+    school: PS('Moon School', 3, 2, '#bcd2ee', 12, 0, { cost: 3800, maint: 28, jobs: 10, power: -5, pop: 800, service: 'edu', cover: 800, multi: true, lvR: 9 }),
     university: PS('Lunar University', 3, 3, '#c9c2e8', 14, 15, { cost: 9500, maint: 55, jobs: 22, power: -10, pop: 2500, hapX: 3, income: 120, lvR: 9 }),
+    academy: PS('Horizon Space & AI Academy', 3, 3, '#aeccec', 34, 0, { cost: 9500, maint: 55, jobs: 22, power: -10, pop: 2000, service: 'edu', cover: 2000, multi: true, lvR: 9 }),
     stadium: PS('Dome Stadium', 4, 4, '#8fd0a0', 10, 120, { cost: 11000, maint: 60, jobs: 16, power: -14, pop: 4000, hapX: 4, lvR: 10 }),
     museum: PS('Ada Yonath Science Museum', 4, 4, '#e8dcc0', 16, 90, { cost: 9000, maint: 45, jobs: 14, power: -8, pop: 1500, hapX: 3, lvR: 9, real: 'Named for Ada Yonath (1939-2026), Nobel Prize in Chemistry 2009, for studies of the structure and function of the ribosome.' }),
     theater: PS('Globe Theater', 3, 2, '#d9b04a', 12, 40, { cost: 5500, maint: 30, jobs: 12, power: -6, pop: 1200, hapX: 3, lvR: 8 }),
@@ -589,7 +599,7 @@ const TABS = [
   { id: 'power', label: 'Power', items: ['solar', 'nuclear2', 'nuclear', 'battery', 'battery2', 'kilo', 'he3', 'lunaring'] },
   { id: 'life', label: 'Life', items: ['ice', 'plant', 'dome3', 'dome4', 'ice2', 'greenhouse'] },
   { id: 'tubes', label: 'Tubes', items: ['tubeMain', 'tubeStreet', 'station', 'metroTrack', 'metroStation', 'metroDoze'] },
-  { id: 'civic', label: 'Civic', items: ['medical', 'hospital', 'police', 'fire', 'kindergarten', 'school', 'university', 'stadium', 'spaceport', 'lunanet', 'printer', 'museum', 'theater', 'cityhall', 'community', 'prayer', 'parcel', 'milbase', 'interceptor'] },
+  { id: 'civic', label: 'Civic', items: ['medical', 'hospital', 'police', 'fire', 'kindergarten', 'school', 'academy', 'university', 'stadium', 'spaceport', 'lunanet', 'printer', 'museum', 'theater', 'cityhall', 'community', 'prayer', 'parcel', 'milbase', 'interceptor'] },
   { id: 'waste', label: 'Waste', items: ['zLand', 'recycle2', 'recycle3', 'recycle4'] },
   { id: 'lm', label: 'Sights', items: ['obs', 'tower', 'library', 'moonbase', 'village', 'starpad', 'radiotel', 'gateway', 'elevator', 'alpha', 'catstatue', 'laika', 'gagarin', 'beresheet', 'ramon', 'sputnik', 'tereshkova', 'leonov', 'lunokhod', 'apollo11', 'earthrise', 'saturnv', 'goldrecord', 'luna9', 'apollo13', 'hubble', 'webb', 'copernicus', 'tycho', 'kepler', 'galileo', 'newton', 'einstein', 'archimedes', 'curie', 'chersch', 'mitchell', 'aristarchus', 'ptolemy', 'fermi', 'hotel', 'ferris', 'prom1'] },
   { id: 'tools', label: 'Tools', items: ['inspect', 'bulldoze', 'level'] }
@@ -805,7 +815,7 @@ function canPlace(id, x, y) {
   return '';
 }
 function lmExists(id) { const k = id.replace(/_r$/, ''); return S.buildings.some(b => b.def.replace(/_r$/, '') === k); }
-function myMons() { return S.buildings.filter(b => { const d = DEFS[b.def]; return d && d.landmark; }).sort((a, b2) => ((DEFS[a.def].pop || 0) - (DEFS[b2.def].pop || 0))); }
+function myMons() { return S.buildings.filter(b => { const d = DEFS[b.def]; return d && d.landmark && !d.multi; }).sort((a, b2) => ((DEFS[a.def].pop || 0) - (DEFS[b2.def].pop || 0))); }
 function gotoMon(id) { const b = typeof id === 'string' ? S.buildings.find(x => x.def === id) : id; if (!b) return; const d = DEFS[b.def]; const cc = P(b.x + d.w / 2, b.y + d.h / 2); cam.x = cc[0]; cam.y = cc[1] - 30; clampCam(); if (ui.layer === 'metro') setLayer('normal'); cancelPending(); ui.tool = TOOLS.inspect; ui.ghost = null; ui.sel = { x: b.x, y: b.y }; showCard(); buildTabs(); refreshHUD(); }
 let monBarOpen = false;
 function refreshMonBar() {
@@ -829,7 +839,7 @@ function placeBuilding(id, x, y) {
   const d = DEFS[id], err = canPlace(id, x, y);
   if (err) return err;
   if (d.pop && (S.popPeak || 0) < d.pop) return T('Needs') + ' ' + d.pop + ' ' + T('residents');
-  if (d.landmark && lmExists(id)) return T('Only one of each sight can be built. Demolish the existing one to build it again.');
+  if (d.landmark && !d.multi && lmExists(id)) return T('Only one of each sight can be built. Demolish the existing one to build it again.');
   if (d.kind === 'military' && baseBuilt()) return T('Only one Military Base can be built. Demolish the existing one to build it again.');
   if (d.landmark && !d.paid) { if ((S.lm || 0) <= 0) return T('No free landmark yet. Grow your population to the next milestone.'); S.lm--; S.lmBuilt = (S.lmBuilt || 0) + 1; }
   if (S.money < d.cost) return T('Not enough credits');
@@ -1052,7 +1062,7 @@ function stepOnce(dt) {
   const lmPos = []; let lvRn = 0, lvRd = 0, lvCn = 0, lvCd = 0, lvTn = 0, lvTd = 0;
   const twPos = twCacheG || []; // vABC-A: 3x3 towers as weak sights (cached in rebuildConn)
   const lvAt = (x, y) => { let m = 0; for (const p of lmPos) if (Math.hypot(p[0] - x - 0.5, p[1] - y - 0.5) <= p[2]) m += 0.08; for (const p of twPos) if (Math.hypot(p[0] - x - 0.5, p[1] - y - 0.5) <= p[2]) m += 0.08; return 1 + Math.min(0.24, m); };
-  let lmN = 0; let hasPort = false, med = 0, pol = 0, fire = 0, nWaitConn = 0, builtZones = 0, maint = 0; let hasCityHall = false, hasParcel = false, recycCap = 0, landCap = 0, landFill = 0;
+  let lmN = 0; let hasPort = false, med = 0, pol = 0, fire = 0, edu = 0, nWaitConn = 0, builtZones = 0, maint = 0; let hasCityHall = false, hasParcel = false, recycCap = 0, landCap = 0, landFill = 0;
   const domes = [], dust = new Float32Array(N * N);
   for (const b of S.buildings) {
     const d = DEFS[b.def];
@@ -1069,12 +1079,12 @@ function stepOnce(dt) {
     if (d.power < 0) demand += -d.power;
     if (d.rawWater) rawWater += d.rawWater * op;
     if (d.process) plantCap += d.process * op;
-    if (d.landmark) { lmN++; tourists += d.tourists * op; if (d.lvR !== 0) lmPos.push([b.x + d.w / 2, b.y + d.h / 2, d.lvR || 8]); lmHapX += d.hapX || 0; if (d.starpad) starpad = true; }
+    if (d.landmark) { if (!d.multi) { lmN++; lmHapX += d.hapX || 0; } tourists += d.tourists * op; if (d.lvR !== 0) lmPos.push([b.x + d.w / 2, b.y + d.h / 2, d.lvR || 8]); if (d.starpad) starpad = true; }
     if (d.kind === 'promenade') tourists += (d.tourists || 0) * op;
     if (d.kind === 'dome') { domeO2 += d.oxygen * op; domeW += d.water; domes.push([b.x + d.w / 2, b.y + d.h / 2, d.oxygen]); }
     jobsP += (d.jobs || 0) * op;
     if (d.kind === 'spaceport') hasPort = true;
-    if (d.service === 'med') med += d.cover; else if (d.service === 'police') pol += d.cover; else if (d.service === 'fire') fire += d.cover;
+    if (d.service === 'med') med += d.cover; else if (d.service === 'police') pol += d.cover; else if (d.service === 'fire') fire += d.cover; else if (d.service === 'edu') edu += d.cover;
     if (d.cityhall) hasCityHall = true;
     if (d.parcel) hasParcel = true;
     if (d.kind === 'recycle') recycCap += (d.proc || 0) * op;
@@ -1151,7 +1161,7 @@ function stepOnce(dt) {
   const unemp = workers > 1 ? Math.max(0, workers - jobsAll) / workers : 0; // v0.78: structural unemployment (built, connected jobs); crisis idling is reported by the power/water advisors
   if (S.mods && S.mods.tourMul && S.mods.tourMul !== 1) tourists = Math.round(tourists * S.mods.tourMul);
   if (hasCityHall) { med = Math.round(med * 1.1); pol = Math.round(pol * 1.1); fire = Math.round(fire * 1.1); }
-  Object.assign(st, { med, pol, fire, cong, housing, jobsC, jobsI, jobsT, jobsP, jobsAll, workers, unemp, tourists, hasPort, op, cityhall: hasCityHall, parcel: hasParcel, recycCap, landCap, landFill });
+  Object.assign(st, { med, pol, fire, edu, cong, housing, jobsC, jobsI, jobsT, jobsP, jobsAll, workers, unemp, tourists, hasPort, op, cityhall: hasCityHall, parcel: hasParcel, recycCap, landCap, landFill });
 
   // ---- RCI demand ----
   const dem = S.demand;
@@ -1233,6 +1243,7 @@ function stepOnce(dt) {
   hf.taxes = -(avgTax - 9) * H.taxWeight;
   const cov = (cap) => S.pop <= 1 ? 1 : Math.min(1, cap / S.pop);
   hf.services = H.med * cov(med) + H.police * cov(pol) + H.fire * cov(fire) - (H.med + H.police + H.fire) * 0.25;
+  hf.edu = S.pop >= 250 ? 3 * (Math.min(1, edu / S.pop) - 0.25) : 0;
   hf.unemployment = S.pop > 20 ? H.unemployment * unemp : 0;
   hf.event = (S.mods && S.mods.hapUntil && S.month < S.mods.hapUntil) ? (S.mods.hapBonus || 0) : 0;
   hf.waste = S.wasteCrisis ? H.waste : 0;
@@ -1251,7 +1262,7 @@ function stepOnce(dt) {
     else if (d.kind === 'military') { const au = b._aura || milAura(b); if (au.homes && !au.ind) { const pen = Math.min(10, 2 + 2 * (b.modules || 0)); for (let yy = b.y - 8; yy < b.y + d.h + 8; yy++) for (let xx = b.x - 8; xx < b.x + d.w + 8; xx++) if (inb(xx, yy)) milV[idx(xx, yy)] += pen; } }
   }
   for (const [x, y, c] of zoneCells) { if (c.zone === 2 && c.lvl) splatC(commCnt, x + 0.5, y + 0.5, 2, 1); else if (c.zone === 4 && c.lvl) splatC(tourCnt, x + 0.5, y + 0.5, 3, 1); }
-  const baseG = hf.base + hf.power + hf.life + hf.congestion + hf.comms + hf.tourism + hf.taxes + hf.services + hf.unemployment + hf.event + hf.waste + hf.cityhall + hf.parcel + hf.pact + hf.landmarks;
+  const baseG = hf.base + hf.power + hf.life + hf.congestion + hf.comms + hf.tourism + hf.taxes + hf.services + hf.unemployment + hf.event + hf.waste + hf.cityhall + hf.parcel + hf.pact + hf.landmarks + hf.edu;
   const hapLoc = new Float32Array(N * N).fill(-1);
   let hSum = 0, hW = 0, aPark = 0, aDust = 0, aSmell = 0, aMil = 0, aShield = 0, aNear = 0;
   for (const [x, y, c] of zoneCells) if (c.zone === 1) {
@@ -2657,6 +2668,33 @@ function drawInterceptor(c, x, y, w, h, night) {
   c.fillStyle = night ? '#ffd97a' : '#bfe3ff'; c.fillRect(cp[0] - 7, cp[1] - 8, 13, 3);
   if (night) lightOn(cp[0], cp[1] - 7, 10, 'rgba(255,215,120,0.35)');
 }
+function paintAcademy(c, x, y, night) { // Horizon Space & AI Academy: glass dome tower on a drum, sand 3D-printed vault wing, bio dome (BIG Mars Science City x ICON Mars Dune Alpha)
+  diamond(c, x, y, 3, 3, '#5a6272', '#c8d2e2');
+  c.fillStyle = '#3fae62';
+  for (const [gx, gy, gr] of [[.62, .8, .12], [.9, 1.1, .09], [2.45, .85, .1], [2.2, 1.15, .08], [1.5, 2.3, .12]]) {
+    const p = P(x + gx, y + gy); c.beginPath(); c.ellipse(p[0], p[1] - 2, gr * 26, gr * 20, 0, 0, 6.3); c.fill();
+  }
+  const N_R = 6, VH = 24;
+  const arch = (cx) => { const a = P(cx, y + 1.75), bq = P(cx, y + 2.65), mx = (a[0] + bq[0]) / 2, my = (a[1] + bq[1]) / 2 - VH; return { a, b: bq, mx, my }; };
+  const ribs = []; for (let i = 0; i < N_R; i++) ribs.push(arch(x + .4 + i * .44));
+  for (let i = 0; i < N_R - 1; i++) {
+    const r1 = ribs[i], r2 = ribs[i + 1];
+    c.beginPath(); c.moveTo(r1.a[0], r1.a[1]); c.quadraticCurveTo(r1.mx, r1.my, r1.b[0], r1.b[1]);
+    c.lineTo(r2.b[0], r2.b[1]); c.quadraticCurveTo(r2.mx, r2.my, r2.a[0], r2.a[1]); c.closePath();
+    c.fillStyle = i % 2 ? '#b9a583' : '#e0d0ae'; c.fill();
+  }
+  c.strokeStyle = '#a8946f'; c.lineWidth = 1.2;
+  for (const r of ribs) { c.beginPath(); c.moveTo(r.a[0], r.a[1]); c.quadraticCurveTo(r.mx, r.my, r.b[0], r.b[1]); c.stroke(); }
+  const e = ribs[N_R - 1];
+  c.beginPath(); c.moveTo(e.a[0], e.a[1]); c.quadraticCurveTo(e.mx, e.my, e.b[0], e.b[1]); c.closePath();
+  c.fillStyle = night ? 'rgba(255,220,150,0.85)' : 'rgba(200,228,248,0.85)'; c.fill(); c.strokeStyle = '#8fa8bd'; c.stroke();
+  const SG = p => MG(p, SIL);
+  drawLook(c, [SG(Cy(1.5, 1.05, .4, 30, 0, 1, 1))], x, y, '#c8e2f8', night);
+  geoDome(c, x + 1.5, y + 1.05, .42, .42, 22, 30, 'rgba(190,230,255,0.20)', '#eaf6ff', 5);
+  geoDome(c, x + .5, y + .72, .46, .46, 15, 0, 'rgba(190,255,214,0.40)', '#e2ffe9', 8);
+  geoDome(c, x + 2.5, y + .72, .44, .44, 20, 0, 'rgba(190,230,255,0.34)', '#d9f0ff', 11);
+  drawLook(c, [An(1.5, 1.05, 8, 50)], x, y, '#bcd2ee', night);
+}
 function drawPlaced(c, b, now, night) {
   const d = DEFS[b.def], x = b.x, y = b.y, w = d.w, h = d.h;
   const ok = (!d.needsTube || b.conn);
@@ -2665,7 +2703,7 @@ function drawPlaced(c, b, now, night) {
   if (LOD > 0 && d.kind === 'dome') figures(c, mid[0], mid[1] + 2, w * TW * 0.2, now, b.id, LOD === 2 ? 5 : 3);
   if (b.shield >= CONFIG.shield.regolith && d.kind !== 'dome') regolithMound(c, x, y, w, h);
   switch (d.kind) {
-    case 'landmark': { if (b.def === 'ferris') { drawFerris(c, b, x, y, w, h, active && night, now); break; } const top = drawLook(c, landmarkPrims(b.def.replace(/_r$/, ''), w, h), x, y, d.color, active && night); break; }
+    case 'landmark': { if (b.def === 'ferris') { drawFerris(c, b, x, y, w, h, active && night, now); break; } if (b.def === 'academy') { paintAcademy(c, x, y, night); break; } const top = drawLook(c, landmarkPrims(b.def.replace(/_r$/, ''), w, h), x, y, d.color, active && night); break; }
     case 'military': { drawMilBase(c, b, x, y, active && night, now); break; }
     case 'interceptor': { drawInterceptor(c, x, y, w, h, active && night); break; }
     case 'solar': {
@@ -3639,6 +3677,7 @@ function advisorTips() {
   const f0 = v => Math.round(v || 0), cr = v => f0(v) + ' cr';
   const buy = (id, why) => { const c = cost(id); return { t: why, cost: c, id, ok: afford(c) }; };
   const cityLive = S.pop > 0 || (st.housing || 0) > 0;
+  const ed = [], hs = [];
   // 1) Builder: growth and what the city is missing
   const g = [];
   if (!cityLive) g.push({ t: 'Zone some Residential land next to a tube so the first people can move in. Start small.' });
@@ -3693,7 +3732,7 @@ function advisorTips() {
   if (cityLive && st.oRatio < 0.98) q.push(buy('dome3', TP('Oxygen is short ({p}%). A Tree Park makes oxygen and makes people happier.', { p: Math.round(st.oRatio * 100) })));
   else if (cityLive && st.oDem > 0 && st.o2Supply < st.oDem * 1.15) q.push({ t: TP('Oxygen supply covers demand with less than 15% spare ({s} of {d}). Plan a Tree Park before it runs short.', { s: Math.round(st.o2Supply * 10) / 10, d: Math.round(st.oDem * 10) / 10 }) });
   if (cityLive && (S.phase || 0) < CONFIG.dayFraction && st.demand > 0 && st.supply >= st.demand && st.supply < st.demand * 1.2) q.push({ t: TP('Power reserve is only {p}% above demand. Add a Solar Array before new growth causes blackouts.', { p: Math.round((st.supply / st.demand - 1) * 100) }) });
-  if (S.pop > 30) { if ((st.med || 0) < S.pop * 0.5) q.push(buy('medical', 'Not enough medical coverage.')); if ((st.pol || 0) < S.pop * 0.5) q.push(buy('police', 'Not enough safety coverage.')); if ((st.fire || 0) < S.pop * 0.5) q.push(buy('fire', 'Not enough emergency coverage.')); }
+  if (S.pop > 30) { if ((st.med || 0) < S.pop * 0.5) hs.push(buy('medical', 'Not enough medical coverage.')); if ((st.pol || 0) < S.pop * 0.5) hs.push(buy('police', 'Not enough safety coverage.')); if ((st.fire || 0) < S.pop * 0.5) hs.push(buy('fire', 'Not enough emergency coverage.')); }
   if (S.pop > 20 && S.happiness < 55) q.push({ t: TP('Happiness is {p}%. Growth stops below about 50%. Parks and services help.', { p: Math.round(S.happiness) }) });
   if ((st.cong || 0) > 0.4) q.push({ t: 'Tubes are crowded. Add a second tube route between busy areas.' });
   if (!q.length) q.push({ t: 'Power, water and air are fine. Keep a spare 20% of power for growth.' });
@@ -3749,10 +3788,29 @@ function advisorTips() {
     if (S.blackout) s2.push({ t: 'Blackout right now! Add power or batteries.' });
     if (!s2.length) s2.push({ t: 'All quiet. Keep homes under dust and domes.' });
   }
+  // Education: coverage and the next school to build
+  {
+    const edCap = st.edu || 0;
+    if (S.pop < 250 && edCap === 0) ed.push({ t: 'No school needed yet. A Kindergarten unlocks at 250 residents.' });
+    else {
+      const covE = S.pop <= 1 ? 1 : Math.min(1, edCap / S.pop);
+      if (covE >= 1) ed.push({ t: TP('Education covers all {p} residents.', { p: fmt(S.pop) }) });
+      else {
+        ed.push({ t: TP('Education covers {e} of {p} residents ({c}%).', { e: fmt(edCap), p: fmt(S.pop), c: Math.round(covE * 100) }) });
+        const next = (S.popPeak || 0) >= 2000 ? 'academy' : (S.popPeak || 0) >= 800 ? 'school' : 'kindergarten';
+        ed.push(buy(next, TP('Build a {name} next to close the gap.', { name: T(DEFS[next].name) })));
+      }
+      if ((S.popPeak || 0) >= 2000 && !S.buildings.some(b => b.def === 'academy')) ed.push(buy('academy', TP('The {name} covers 2,000 residents in one building - the cheapest upkeep per resident.', { name: T(DEFS.academy.name) })));
+    }
+    if (!ed.length) ed.push({ t: 'Education is fine. Full coverage raises happiness.' });
+  }
+  if (!hs.length) hs.push({ t: 'Medical, safety and emergency coverage is fine.' });
   return [
     { n: 'Builder', r: 'Growth and what the city needs', col: '#4cd98a', ch: 'B', tips: g },
     { n: 'Treasurer', r: 'Money and profit (protects your credits)', col: '#ffc84a', ch: 'T', tips: e },
     { n: 'Engineer', r: 'Power, life support and quality of life', col: '#6aa8ff', ch: 'E', tips: q },
+    { n: 'Education', r: 'Schools and coverage for every resident', col: '#f2d98a', ch: 'D', tips: ed },
+    { n: 'Health & Safety', r: 'Medical, emergency and safety coverage', col: '#ff8a9a', ch: 'H', tips: hs },
     { n: 'Environment', r: 'Waste, recycling and landfills', col: '#b08040', ch: 'V', tips: v },
     { n: 'Tourism', r: 'Visitors and sight income', col: '#c084fc', ch: 'U', tips: u },
     { n: 'Safety', r: 'Shields and emergencies', col: '#ff6a6a', ch: 'S', tips: s2 }
@@ -3778,7 +3836,7 @@ function mayorHtml() {
   return '<div id="mayor"><h4>' + T('Message from the Mayor') + '</h4>' + Object.keys(stages).map(p => '<p>' + T('Your city has reached a new stage: ') + fmt(+p) + ' ' + T('residents') + '. ' + T('Now available: ') + stages[p].map(n => T(n)).join(', ') + '.</p>').join('') + '<button class="btn" id="mayorOk" style="width:100%;margin-top:6px">' + T('OK, thank you') + '</button></div>';
 }
 function renderAdvisors() {
-  $('adTitle').textContent = T('City advisors'); $('adSub').textContent = T('Six advisors, six goals. Each warns you before you spend below your safety reserve.'); $('adClose').textContent = T('Close');
+  $('adTitle').textContent = T('City advisors'); $('adSub').textContent = T('Eight advisors, eight goals. Each warns you before you spend below your safety reserve.'); $('adClose').textContent = T('Close');
   $('adList').innerHTML = rocketHtml() + mayorHtml() + advisorTips().map(a => '<div class="ad"><div class="ah"><div class="av" style="background:' + a.col + '">' + a.ch + '</div><div><div class="an">' + T(a.n) + '</div><div class="ar">' + T(a.r) + '</div></div></div>' +
     a.tips.slice(0, 4).map(t => '<div class="tip">' + T(t.t) + (t.id ? '<i>' + T(DEFS[t.id].name) + ': <u>' + t.cost + ' cr</u> - ' + (t.ok ? T('you can afford it and keep your reserve') : T('wait: it would leave you below your safety reserve')) + '</i>' : '') + '</div>').join('') + '</div>').join('');
 }
@@ -3930,7 +3988,7 @@ function renderSheet(full) {
       '<div class="sec"><h4>' + T('Status') + '</h4>' + kv(T('Grid'), S.blackout ? T('BLACKOUT') : T('Stable'), S.blackout ? 'st-bad' : 'st-ok') +
       '<div style="color:#dfe8ff;font-size:13px;margin-top:6px;line-height:1.4">' + powerAdvice() + '</div><div style="color:#a9bbdd;font-size:12px;margin-top:6px">' + T('Night lasts about 14.75 days. Solar gives nothing at night.') + '</div></div>';
   } else if (sheetTab === 'City') {
-    const hf = st.hf || {}, lab = { base: 'Base', power: 'Power', life: 'Water and oxygen', congestion: 'Tube congestion', shielding: 'Radiation shielding', parks: 'Dome parks', dust: 'Industrial dust', tourism: 'Tourism', landmarks: 'Landmarks', nearby: 'Nearby places', comms: 'Communications', event: 'Event', taxes: 'Taxes', services: 'Services', unemployment: 'Unemployment', waste: 'Waste crisis', cityhall: 'City Hall', parcel: 'Packages from home', military: 'Military bases', pact: 'Defense pact', smell: 'Landfill smell' };
+    const hf = st.hf || {}, lab = { base: 'Base', power: 'Power', life: 'Water and oxygen', congestion: 'Tube congestion', shielding: 'Radiation shielding', parks: 'Dome parks', dust: 'Industrial dust', tourism: 'Tourism', landmarks: 'Landmarks', edu: 'Education', nearby: 'Nearby places', comms: 'Communications', event: 'Event', taxes: 'Taxes', services: 'Services', unemployment: 'Unemployment', waste: 'Waste crisis', cityhall: 'City Hall', parcel: 'Packages from home', military: 'Military bases', pact: 'Defense pact', smell: 'Landfill smell' };
     let hh = ''; for (const k in hf) hh += kv(T(lab[k] || k), (hf[k] >= 0 ? '+' : '') + hf[k].toFixed(1), hf[k] < -0.05 ? 'st-bad' : hf[k] > 0.05 ? 'st-ok' : '');
     const L = S.last || {};
     body.innerHTML = '<div class="sec"><h4>' + T('Credits') + '</h4>' + kv(T('Total'), fmt(S.money)) + '</div>' + '<div class="sec"><h4>' + T('People') + '</h4>' + kv(T('Population'), fmt(S.pop)) + kv(T('Housing capacity'), fmt(st.housing || 0)) + kv(T('Workers'), fmt(st.workers || 0)) +
@@ -4127,7 +4185,7 @@ function drawTitleArt(cv2, o) {
   if (o) return c;
   const fade = c.createLinearGradient(0, H * 0.45, 0, H * 0.78); fade.addColorStop(0, 'rgba(3,5,12,0)'); fade.addColorStop(1, 'rgba(3,5,12,0.92)'); c.fillStyle = fade; c.fillRect(0, 0, W, H);
 }
-const GAME_VERSION = '0.79'; // 0.<batch number>: goes up by one with every published batch
+const GAME_VERSION = '0.80'; // 0.<batch number>: goes up by one with every published batch
 function stPanel(html) { $('stIn').innerHTML = html; $('stPanel').style.display = 'flex'; $('stPanel').scrollTop = 0; }
 function stClose() { $('stPanel').style.display = 'none'; buildSlots(); }
 function stBack(extra) { return '<button class="btn" id="stBack" style="margin-top:6px">' + T(extra || 'Back') + '</button>'; }
