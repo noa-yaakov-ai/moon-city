@@ -154,6 +154,10 @@ input[type=range]{width:100%;height:36px}
 body.big #bottom{zoom:1.14}body.big #top{zoom:1.1}
 #tut{position:absolute;left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom) + 132px);z-index:8;background:#0e1630f2;border:1px solid #6a8bff;border-radius:12px;padding:8px 10px;font-size:13px;line-height:1.35;display:none;gap:8px;align-items:center}#tut b{color:#ffd24a}#tut .btn{min-height:32px;padding:0 10px;font-size:12px;flex:none}
 #bStop{position:absolute;right:6px;bottom:calc(env(safe-area-inset-bottom) + 126px);z-index:6;display:none;min-height:40px;background:#3a1a1a;border-color:#a55}
+
+/* fact strip inside building card */
+.factStrip{margin-top:6px;background:#16224a;border-inline-start:3px solid #8fc4e6;border-radius:8px;padding:6px 8px;font-size:12.5px;line-height:1.4}
+.factStrip b{color:#8fc4e6}
 </style>
 </head>
 <body>
@@ -3897,6 +3901,7 @@ function showCard() {
     if (d.kind === 'nuclear') h += ln(T('Output'), Math.round(d.power * S.coolRatio * (b.cracked ? 0.5 : 1)) + ' / ' + d.power + ' MW') + ln(T('Cooling water'), d.cooling + ' units') + ln(T('Housing buffer'), CONFIG.nuclearBuffer + ' ' + T('tiles'));
     if (d.kind === 'battery') h += ln(T('Stored'), fmt(S.storage) + ' / ' + fmt(st.battCap || 0) + ' MWh') + ln(T('Capacity'), fmt(d.storage) + ' MWh');
     if (d.real) h += ln(T('Based on'), T(d.real));
+    if (window.FACTCARDS && FACTCARDS[b.def]) { const _f = FACTCARDS[b.def]; h += '<div class="factStrip" dir="' + (LANG === 'he' ? 'rtl' : 'ltr') + '"><b>' + (LANG === 'he' ? 'הידעת?' : 'Did you know?') + '</b> ' + (LANG === 'he' ? _f.he : _f.en) + '</div>'; }
     if (d.kind === 'ice') h += ln(T('Output'), d.rawWater + ' ' + T('water units')) + ln(T('Needs'), d.power * -1 + ' MW');
     if (d.kind === 'plant') h += ln(T('Processes'), d.process + ' ' + T('units -> water + oxygen')) + ln(T('Needs'), -d.power + ' MW');
     if (d.kind === 'dome') h += ln(T('Oxygen'), '+' + d.oxygen) + ln(T('Needs'), -d.power + ' MW, ' + d.water + ' ' + T('water')) + ln(T('Happiness'), T('raises nearby housing') + ' (' + CONFIG.parkRadius + ' ' + T('tiles') + ')');
@@ -4185,7 +4190,7 @@ function drawTitleArt(cv2, o) {
   if (o) return c;
   const fade = c.createLinearGradient(0, H * 0.45, 0, H * 0.78); fade.addColorStop(0, 'rgba(3,5,12,0)'); fade.addColorStop(1, 'rgba(3,5,12,0.92)'); c.fillStyle = fade; c.fillRect(0, 0, W, H);
 }
-const GAME_VERSION = '0.80'; // 0.<batch number>: goes up by one with every published batch
+const GAME_VERSION = '0.81'; // 0.<batch number>: goes up by one with every published batch
 function stPanel(html) { $('stIn').innerHTML = html; $('stPanel').style.display = 'flex'; $('stPanel').scrollTop = 0; }
 function stClose() { $('stPanel').style.display = 'none'; buildSlots(); }
 function stBack(extra) { return '<button class="btn" id="stBack" style="margin-top:6px">' + T(extra || 'Back') + '</button>'; }
@@ -4278,5 +4283,15 @@ window.__mc = { paintMetro, addStation, metroInfo, setLayer, LAYERS, P, startAni
 try { init(); } catch (e) { console.error(e); document.body.insertAdjacentHTML('beforeend', '<pre style="position:fixed;top:0;color:#f88;z-index:99">' + e.stack + '</pre>'); }
 </script>
 <script data-goatcounter="https://noa-moon-city.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+<script>
+/* staged: 'Did you know?' fact strips in building cards - DOM only */
+window.FACTCARDS = {
+  ice:      { en: 'NASA found evidence of water ice in permanently shadowed areas near the lunar poles. This mine is a concept simulation, not proven technology.', he: 'נאס"א מצאה עדויות לקרח מים באזורים מוצלים בקטבי הירח. המכרה כאן הוא הדמיה רעיונית, לא טכנולוגיה מוכחת.' },
+  ice2:     { en: 'NASA found evidence of water ice in permanently shadowed areas near the lunar poles. This deep mine is a concept simulation, not proven technology.', he: 'נאס"א מצאה עדויות לקרח מים באזורים מוצלים בקטבי הירח. המכרה העמוק כאן הוא הדמיה רעיונית, לא טכנולוגיה מוכחת.' },
+  solar:    { en: 'The Moon has only a thin exosphere instead of a substantial atmosphere (NASA). In the game, solar panels produce nothing during the long lunar night.', he: 'לירח יש רק אקזוספירה דקיקה במקום אטמוספירה משמעותית (נאס"א). במשחק: פאנלים סולאריים לא מייצרים כלום בלילה הירחי הארוך.' },
+  nuclear:  { en: 'NASA and the US Department of Energy are developing fission power for the Moon. The reactors here are a concept simulation at a different scale.', he: 'נאס"א ומשרד האנרגיה האמריקאי מפתחים אנרגיית ביקוע עבור הירח. הכורים כאן הם הדמיה רעיונית בקנה מידה אחר.' },
+  nuclear2: { en: 'NASA and the US Department of Energy are developing fission power for the Moon. The reactors here are a concept simulation at a different scale.', he: 'נאס"א ומשרד האנרגיה האמריקאי מפתחים אנרגיית ביקוע עבור הירח. הכורים כאן הם הדמיה רעיונית בקנה מידה אחר.' }
+};
+</script>
 </body>
 </html>
